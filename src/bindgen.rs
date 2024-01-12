@@ -174,6 +174,7 @@ pub fn gen(input_path: String) {
                 .description
                 .clone()
                 .unwrap_or("No description available.".to_owned());
+            output.write(b"\t").unwrap();
             output.write(make_comment(desc).as_bytes()).unwrap();
             output
                 .write(format!("\t{}: {},\n", name, resolved_type).as_bytes())
