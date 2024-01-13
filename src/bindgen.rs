@@ -104,12 +104,12 @@ pub fn gen(input_path: String) {
         );
 
         // Write description.
-        output.write(desc.as_bytes()).unwrap();
+        output.write_all(desc.as_bytes()).unwrap();
 
         // Write name.
-        output.write(b"struct ").unwrap();
-        output.write(name.as_bytes()).unwrap();
-        output.write(b" {\n").unwrap();
+        output.write_all(b"struct ").unwrap();
+        output.write_all(name.as_bytes()).unwrap();
+        output.write_all(b" {\n").unwrap();
 
         // For every struct field.
         for (prop_name, prop) in &comp.properties {
@@ -167,30 +167,30 @@ pub fn gen(input_path: String) {
             // Escape field names if they are Rust keywords.
             let name = match prop_name.as_str() {
                 "type" => "r#type",
-                _ => &prop_name,
+                _ => prop_name,
             };
 
             let desc = prop
                 .description
                 .clone()
                 .unwrap_or("No description available.".to_owned());
-            output.write(b"\t").unwrap();
-            output.write(make_comment(desc).as_bytes()).unwrap();
+            output.write_all(b"\t").unwrap();
+            output.write_all(make_comment(desc).as_bytes()).unwrap();
             output
-                .write(format!("\t{}: {},\n", name, resolved_type).as_bytes())
+                .write_all(format!("\t{}: {},\n", name, resolved_type).as_bytes())
                 .unwrap();
         }
-        output.write(b"}\n\n").unwrap();
+        output.write_all(b"}\n\n").unwrap();
 
         // Write the generated enums.
         for (name, vars) in &enums {
             output
-                .write(format!("enum {} {{\n", name).as_bytes())
+                .write_all(format!("enum {} {{\n", name).as_bytes())
                 .unwrap();
             for var in vars {
-                output.write(var.as_bytes()).unwrap();
+                output.write_all(var.as_bytes()).unwrap();
             }
-            output.write(b"}\n\n").unwrap();
+            output.write_all(b"}\n\n").unwrap();
         }
     }
 }
