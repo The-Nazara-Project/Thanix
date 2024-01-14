@@ -179,7 +179,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>) {
                 "boolean" => "bool".to_owned(),
                 "array" => get_inner_type(prop.items.as_ref().unwrap().clone()),
                 "object" => "Json".to_owned(),
-                _ => "_unknown".to_owned(),
+                _ => todo!(),
             };
 
             // Wrap type in an Option<T> if nullable.
