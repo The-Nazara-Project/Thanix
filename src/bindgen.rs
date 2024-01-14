@@ -2,11 +2,8 @@ use serde::Deserialize;
 use serde_yaml::{Number, Value};
 use std::{collections::HashMap, fs::File, io::Write};
 
-// Type names.
-const TYPE_DATETIME: &'static str = "DateTime";
-const TYPE_URI: &'static str = "Uri";
-
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct Schema {
     #[serde(rename = "openapi")]
     open_api: String,
@@ -16,6 +13,7 @@ struct Schema {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct SchemaInfo {
     title: String,
     version: String,
@@ -23,6 +21,7 @@ struct SchemaInfo {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct Path {
     get: Option<PathOp>,
     post: Option<PathOp>,
@@ -32,13 +31,21 @@ struct Path {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct PathOp {
     #[serde(rename = "operationId")]
     operation_id: String,
     description: String,
+    parameters: Option<Vec<Response>>,
+    responses: HashMap<String, Response>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct Response {}
+
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct ComponentSchemas {
     schemas: HashMap<String, Component>,
     #[serde(rename = "securitySchemes")]
@@ -46,6 +53,7 @@ struct ComponentSchemas {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct Component {
     #[serde(rename = "type")]
     typ: String,
@@ -57,6 +65,7 @@ struct Component {
 }
 
 #[derive(Debug, Deserialize, Default)]
+#[allow(dead_code)]
 struct Property {
     #[serde(rename = "type")]
     typ: Option<String>,
@@ -72,96 +81,105 @@ struct Property {
     enumeration: Option<Vec<String>>,
     nullable: Option<bool>,
     properties: Option<Value>,
+    items: Option<Value>,
+    #[serde(rename = "allOf")]
+    all_of: Option<Vec<Value>>,
 }
 
 /// Makes a comment out of a given string.
-fn make_comment<'a>(input: String) -> String {
+fn make_comment(input: String, indent: usize) -> String {
     return input
-        .split("\n")
-        .map(|x| format!("/// {}\n", x))
+        .split('\n')
+        .map(|x| format!("{}/// {}\n", "\t".repeat(indent), x))
         .collect::<Vec<_>>()
         .concat();
 }
 
 /// Generates the Rust bindings from a file.
-pub fn gen(input_path: String) {
+pub fn gen(input_path: impl AsRef<std::path::Path>) {
+    // Parse the schema.
     let input = std::fs::read_to_string(input_path).unwrap();
     let yaml: Schema = serde_yaml::from_str(&input).unwrap();
 
+    // Generate output folder.
+    _ = std::fs::create_dir("output/");
+
+    // Create and open the output file for structs.
+    let mut types_file = File::create("output/types.rs").unwrap();
+
     // For every struct.
     for (name, comp) in &yaml.components.schemas {
-        // Create and open the output file.
-        let mut output = File::create(format!("output/{}.rs", name)).unwrap();
-
-        // Contains enums that were defined by this struct.
-        let mut enums = HashMap::new();
-
+        // Keep a record of all written fields for a constructor.
+        let mut fields = Vec::new();
         // Prepend slashes to all lines in the documentation string.
-        let desc = make_comment(
-            comp.description
-                .clone()
-                .unwrap_or("No description available".to_owned()),
-        );
-
+        let desc = match comp.description.clone() {
+            Some(d) => make_comment(d, 0),
+            None => String::new(),
+        };
         // Write description.
-        output.write_all(desc.as_bytes()).unwrap();
-
+        types_file.write_all(desc.as_bytes()).unwrap();
         // Write name.
-        output.write_all(b"struct ").unwrap();
-        output.write_all(name.as_bytes()).unwrap();
-        output.write_all(b" {\n").unwrap();
-
+        types_file.write_all(b"pub struct ").unwrap();
+        types_file.write_all(name.as_bytes()).unwrap();
+        types_file.write_all(b" {\n").unwrap();
         // For every struct field.
         for (prop_name, prop) in &comp.properties {
-            // Get type or skip this property if none given.
-            let t = match &prop.typ {
+            // Get the type of this field from YAML.
+            let yaml_type = match prop.typ.as_ref() {
                 Some(val) => val.as_str(),
                 None => continue,
             };
-            // Resolve the type from YAML to a Rust type.
-            let mut resolved_type = match t {
+
+            let mut type_result = match yaml_type {
                 // "string" can mean either a plain or formatted string or an enum declaration.
                 "string" => match &prop.format {
                     Some(x) => match x.as_str() {
-                        "uri" => TYPE_URI,
-                        "date-time" => TYPE_DATETIME,
-                        _ => match &prop.enumeration {
-                            // Handle inline enum declaration.
-                            // TODO: Name mangling.
+                        "uri" => "Uri".to_owned(),
+                        "date-time" => "DateTime".to_owned(),
+                        _ => "String".to_owned(),
+                    },
+                    None => "String".to_owned(),
+                },
+                "integer" => "i64".to_owned(),
+                "number" => "f64".to_owned(),
+                "boolean" => "bool".to_owned(),
+                "array" => {
+                    // Get inner type of the array.
+                    let helper_str: String;
+                    let inner_type = match &prop.items {
+                        Some(x) => match x.get("$ref") {
+                            // Struct type
                             Some(y) => {
-                                enums.insert(prop_name.clone(), y.clone());
-                                println!("Added {}", &prop_name);
-                                continue;
+                                helper_str =
+                                    y.as_str().unwrap().replace("#/components/schemas/", "");
+                                helper_str.as_str()
                             }
-                            None => "String",
+                            // Normal type
+                            None => match x.get("type") {
+                                Some(y) => match y.as_str().unwrap() {
+                                    "integer" => "i64",
+                                    "number" => "bool",
+                                    "string" => "String",
+                                    "boolean" => "bool",
+                                    _ => "unknown",
+                                },
+                                // We don't know what this is so assume a JSON object.
+                                None => "Json",
+                            },
                         },
-                    },
-                    None => continue,
-                },
-                // "integer" usually means i64.
-                "integer" => match &prop.format {
-                    Some(val) => match val.as_str() {
-                        _ => "i64",
-                    },
-                    None => "i64",
-                },
-                // "number" usually means f64.
-                "number" => match &prop.format {
-                    Some(val) => match val.as_str() {
-                        _ => "f64",
-                    },
-                    None => "f64",
-                },
-                "boolean" => "bool",
-                // TODO
-                "array" => "Vec<?>",
-                _ => "?",
+                        // We need an array type!
+                        None => continue,
+                    };
+                    let fmt = format!("Vec<{inner_type}>");
+                    fmt.clone()
+                }
+                "object" => "Json".to_owned(),
+                _ => "_unknown".to_owned(),
             };
 
-            // If a property is nullable, convert the field type to an Option<T>.
-            let fmt = format!("Option<{}>", resolved_type);
+            // Wrap type in an Option<T> if nullable.
             if prop.nullable.unwrap_or(false) {
-                resolved_type = fmt.as_str();
+                type_result = format!("Option<{type_result}>");
             }
 
             // Escape field names if they are Rust keywords.
@@ -170,27 +188,18 @@ pub fn gen(input_path: String) {
                 _ => prop_name,
             };
 
-            let desc = prop
-                .description
-                .clone()
-                .unwrap_or("No description available.".to_owned());
-            output.write_all(b"\t").unwrap();
-            output.write_all(make_comment(desc).as_bytes()).unwrap();
-            output
-                .write_all(format!("\t{}: {},\n", name, resolved_type).as_bytes())
+            // Prepend slashes to all lines in the documentation string.
+            if let Some(d) = prop.description.as_ref() {
+                types_file
+                    .write_all(make_comment(d.clone(), 1).as_bytes())
+                    .unwrap();
+            };
+            // Write the field to file.
+            types_file
+                .write_all(format!("\t{}: {},\n", name, type_result).as_bytes())
                 .unwrap();
+            fields.push((name, type_result));
         }
-        output.write_all(b"}\n\n").unwrap();
-
-        // Write the generated enums.
-        for (name, vars) in &enums {
-            output
-                .write_all(format!("enum {} {{\n", name).as_bytes())
-                .unwrap();
-            for var in vars {
-                output.write_all(var.as_bytes()).unwrap();
-            }
-            output.write_all(b"}\n\n").unwrap();
-        }
+        types_file.write_all(b"}\n\n").unwrap();
     }
 }
