@@ -95,6 +95,40 @@ fn make_comment(input: String, indent: usize) -> String {
         .concat();
 }
 
+fn get_inner_type(items: Value) -> String {
+    // Get inner type of the array.
+    let inner_type = match items.get("$ref") {
+        // Struct type
+        Some(y) => y.as_str().unwrap().replace("#/components/schemas/", ""),
+        // Normal type
+        None => match items.get("type") {
+            Some(y) => match y.as_str().unwrap() {
+                "integer" => "i64".to_owned(),
+                "number" => "f64".to_owned(),
+                "string" => match items.get("format") {
+                    Some(x) => match x.as_str().unwrap() {
+                        "uri" => "Uri".to_owned(),
+                        "date-time" => "DateTime".to_owned(),
+                        _ => "String".to_owned(),
+                    },
+                    None => "String".to_owned(),
+                },
+                "boolean" => "bool".to_owned(),
+                "object" => "Json".to_owned(),
+                "array" => get_inner_type(match items.get("items") {
+                    Some(z) => z.clone(),
+                    None => panic!("array is missing items section!"),
+                }),
+                _ => panic!("unhandled type!"),
+            },
+            // We don't know what this is so assume a JSON object.
+            None => "Json".to_owned(),
+        },
+    };
+    let fmt = format!("Vec<{inner_type}>");
+    fmt.clone()
+}
+
 /// Generates the Rust bindings from a file.
 pub fn gen(input_path: impl AsRef<std::path::Path>) {
     // Parse the schema.
@@ -143,36 +177,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>) {
                 "integer" => "i64".to_owned(),
                 "number" => "f64".to_owned(),
                 "boolean" => "bool".to_owned(),
-                "array" => {
-                    // Get inner type of the array.
-                    let helper_str: String;
-                    let inner_type = match &prop.items {
-                        Some(x) => match x.get("$ref") {
-                            // Struct type
-                            Some(y) => {
-                                helper_str =
-                                    y.as_str().unwrap().replace("#/components/schemas/", "");
-                                helper_str.as_str()
-                            }
-                            // Normal type
-                            None => match x.get("type") {
-                                Some(y) => match y.as_str().unwrap() {
-                                    "integer" => "i64",
-                                    "number" => "bool",
-                                    "string" => "String",
-                                    "boolean" => "bool",
-                                    _ => "unknown",
-                                },
-                                // We don't know what this is so assume a JSON object.
-                                None => "Json",
-                            },
-                        },
-                        // We need an array type!
-                        None => continue,
-                    };
-                    let fmt = format!("Vec<{inner_type}>");
-                    fmt.clone()
-                }
+                "array" => get_inner_type(prop.items.as_ref().unwrap().clone()),
                 "object" => "Json".to_owned(),
                 _ => "_unknown".to_owned(),
             };
