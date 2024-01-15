@@ -34,10 +34,20 @@ struct Path {
 #[allow(dead_code)]
 struct PathOp {
     #[serde(rename = "operationId")]
-    operation_id: String,
-    description: String,
-    parameters: Option<Vec<Response>>,
-    responses: HashMap<String, Response>,
+    operation_id: Option<String>,
+    description: Option<String>,
+    #[serde(default)]
+    parameters: Vec<Parameter>,
+    responses: Option<HashMap<String, Response>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct Parameter {
+    #[serde(rename = "in")]
+    input: String,
+    name: String,
+    schema: Option<Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -95,7 +105,35 @@ fn make_comment(input: String, indent: usize) -> String {
         .concat();
 }
 
-fn get_inner_type(items: Value) -> String {
+fn make_fn_name_from_path(input: String) -> String {
+    input.replace("/api/", "").replace('/', "_")
+}
+
+/// Replaces reserved keywords in an input string for use in Rust.
+fn fix_keywords(input: String) -> String {
+    input
+        .replace("type", "typ")
+        .replace("struct", "structure")
+        .replace("fn", "func")
+}
+
+fn pathop_to_string(name: String, input: &PathOp, variant: &str) -> String {
+    format!(
+        "{}pub fn {}({}) -> Result<Response, Error> {{ return REQWEST_CLIENT.{}(format!(\"{}\")).execute().await; }}\n",
+        make_comment(input.description.clone().unwrap(), 0),
+        input.operation_id.clone().unwrap_or(make_fn_name_from_path(name.clone())),
+        input.parameters.iter().enumerate().map(|(s, p)| format!(
+                "{}: {}{}",
+                fix_keywords(p.name.clone()),
+                get_inner_type(p.schema.as_ref().unwrap().clone(), false),
+                if s == input.parameters.len() - 1 { "" } else { ", " }
+            )).collect::<String>(),
+        variant,
+        name
+    )
+}
+
+fn get_inner_type(items: Value, append_vec: bool) -> String {
     // Get inner type of the array.
     let inner_type = match items.get("$ref") {
         // Struct type
@@ -103,7 +141,15 @@ fn get_inner_type(items: Value) -> String {
         // Normal type
         None => match items.get("type") {
             Some(y) => match y.as_str().unwrap() {
-                "integer" => "i64".to_owned(),
+                "integer" => match items.get("format") {
+                    Some(x) => match x.as_str().unwrap() {
+                        "int8" => "i8".to_owned(),
+                        "int16" => "i16".to_owned(),
+                        "int32" => "i32".to_owned(),
+                        _ => "i64".to_owned(),
+                    },
+                    None => "i64".to_owned(),
+                },
                 "number" => "f64".to_owned(),
                 "string" => match items.get("format") {
                     Some(x) => match x.as_str().unwrap() {
@@ -115,18 +161,24 @@ fn get_inner_type(items: Value) -> String {
                 },
                 "boolean" => "bool".to_owned(),
                 "object" => "Json".to_owned(),
-                "array" => get_inner_type(match items.get("items") {
-                    Some(z) => z.clone(),
-                    None => panic!("array is missing items section!"),
-                }),
+                "array" => get_inner_type(
+                    match items.get("items") {
+                        Some(z) => z.clone(),
+                        None => panic!("array is missing items section!"),
+                    },
+                    true,
+                ),
                 _ => panic!("unhandled type!"),
             },
             // We don't know what this is so assume a JSON object.
             None => "Json".to_owned(),
         },
     };
-    let fmt = format!("Vec<{inner_type}>");
-    fmt.clone()
+    if append_vec {
+        let fmt = format!("Vec<{inner_type}>");
+        return fmt.clone();
+    }
+    inner_type
 }
 
 /// Generates the Rust bindings from a file.
@@ -177,7 +229,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>) {
                 "integer" => "i64".to_owned(),
                 "number" => "f64".to_owned(),
                 "boolean" => "bool".to_owned(),
-                "array" => get_inner_type(prop.items.as_ref().unwrap().clone()),
+                "array" => get_inner_type(prop.items.as_ref().unwrap().clone(), true),
                 "object" => "Json".to_owned(),
                 _ => todo!(),
             };
@@ -206,5 +258,37 @@ pub fn gen(input_path: impl AsRef<std::path::Path>) {
             fields.push((name, type_result));
         }
         types_file.write_all(b"}\n\n").unwrap();
+    }
+
+    // Create and open the output file for paths.
+    let mut paths_file = File::create("output/paths.rs").unwrap();
+
+    // For every path.
+    for (name, path) in &yaml.paths {
+        path.get.as_ref().inspect(|op| {
+            paths_file
+                .write_all(pathop_to_string(name.clone(), op, "get").as_bytes())
+                .unwrap()
+        });
+        path.put.as_ref().inspect(|op| {
+            paths_file
+                .write_all(pathop_to_string(name.clone(), op, "put").as_bytes())
+                .unwrap()
+        });
+        path.post.as_ref().inspect(|op| {
+            paths_file
+                .write_all(pathop_to_string(name.clone(), op, "post").as_bytes())
+                .unwrap()
+        });
+        path.patch.as_ref().inspect(|op| {
+            paths_file
+                .write_all(pathop_to_string(name.clone(), op, "patch").as_bytes())
+                .unwrap()
+        });
+        path.delete.as_ref().inspect(|op| {
+            paths_file
+                .write_all(pathop_to_string(name.clone(), op, "delete").as_bytes())
+                .unwrap()
+        });
     }
 }
