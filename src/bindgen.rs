@@ -1,6 +1,11 @@
 use serde::Deserialize;
 use serde_yaml::{Number, Value};
-use std::{env::{current_dir, set_current_dir}, collections::HashMap, fs::{File, self}, io::Write};
+use std::{
+    collections::HashMap,
+    env::{current_dir, set_current_dir},
+    fs::{self, File},
+    io::Write,
+};
 
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
@@ -368,7 +373,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>) {
     }
 
     _ = match create_lib_dir() {
-        Ok(()) => {},
+        Ok(()) => {}
         Err(e) => {
             panic!("{}", e);
         }
