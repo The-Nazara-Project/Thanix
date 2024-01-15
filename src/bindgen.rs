@@ -181,6 +181,13 @@ fn get_inner_type(items: Value, append_vec: bool) -> String {
     inner_type
 }
 
+/// Executes a closure if the Option contains a Some value.
+fn if_some<F: FnOnce(&T), T>(this: Option<T>, func: F) {
+    if let Some(ref x) = this {
+        func(x);
+    } 
+}
+
 /// Generates the Rust bindings from a file.
 pub fn gen(input_path: impl AsRef<std::path::Path>) {
     // Parse the schema.
@@ -265,27 +272,27 @@ pub fn gen(input_path: impl AsRef<std::path::Path>) {
 
     // For every path.
     for (name, path) in &yaml.paths {
-        path.get.as_ref().inspect(|op| {
+        if_some(path.get.as_ref(), |op| {
             paths_file
                 .write_all(pathop_to_string(name.clone(), op, "get").as_bytes())
                 .unwrap()
         });
-        path.put.as_ref().inspect(|op| {
+        if_some(path.put.as_ref(), |op| {
             paths_file
                 .write_all(pathop_to_string(name.clone(), op, "put").as_bytes())
                 .unwrap()
         });
-        path.post.as_ref().inspect(|op| {
+        if_some(path.post.as_ref(), |op| {
             paths_file
                 .write_all(pathop_to_string(name.clone(), op, "post").as_bytes())
                 .unwrap()
         });
-        path.patch.as_ref().inspect(|op| {
+        if_some(path.patch.as_ref(), |op| {
             paths_file
                 .write_all(pathop_to_string(name.clone(), op, "patch").as_bytes())
                 .unwrap()
         });
-        path.delete.as_ref().inspect(|op| {
+        if_some(path.delete.as_ref(), |op| {
             paths_file
                 .write_all(pathop_to_string(name.clone(), op, "delete").as_bytes())
                 .unwrap()
