@@ -132,6 +132,14 @@ fn create_lib_dir() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let lib_rs = r#"// Your library code goes here.
+#[macro_use]
+extern crate serde_derive;
+
+extern crate serde;
+extern crate serde_json;
+extern crate url;
+extern crate reqwest;
+
 pub mod paths;
 pub mod types;"#;
     let mut lib_file = fs::File::create(format!("{}/lib.rs", src_dir))?;
@@ -149,6 +157,7 @@ path = "src/lib.rs"
 [dependencies]
 serde = { version = "1.0.195", features = ["derive"] }
 serde_yaml = "0.9.30"
+reqwest = { version = "0.*", features = ["blocking", "json"] }
 
 [[bin]]
 name = "your_bin_name"
@@ -373,7 +382,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>) {
     }
 
     _ = match create_lib_dir() {
-        Ok(()) => {}
+        Ok(()) => (),
         Err(e) => {
             panic!("{}", e);
         }
