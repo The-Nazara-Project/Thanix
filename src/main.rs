@@ -26,7 +26,7 @@ fn main() {
     // Welcome Message
     println!(
         "{} \n(c) The Nazara Project. (github.com/The-Nazara-Project)\n
-        Licensed under the terms of the MIT-License.\n\
+        Licensed under the terms of the GPL-v3.0-License.\n\
         Check github.com/The-Nazara-Project/Thanix/LICENSE for more info.\n",
         ascii_art
     );
