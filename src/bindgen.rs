@@ -185,7 +185,7 @@ fn get_inner_type(items: Value, append_vec: bool) -> String {
 fn if_some<F: FnOnce(&T), T>(this: Option<T>, func: F) {
     if let Some(ref x) = this {
         func(x);
-    } 
+    }
 }
 
 /// Generates the Rust bindings from a file.
