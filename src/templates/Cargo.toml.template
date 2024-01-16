@@ -1,0 +1,17 @@
+[package]
+name = "{}"
+version = "0.1.0"
+authors = ["Your Name"]
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+serde = {{ version = ">1.0.195", features = ["derive"] }}
+serde_yaml = ">0.9.30"
+reqwest = {{ version = ">0.*", features = ["blocking", "json"] }}
+
+[[bin]]
+name = "your_bin_name"
+path = "src/main.rs"

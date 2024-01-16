@@ -9,6 +9,9 @@ struct Args {
     /// Path to a YAML schema file.
     #[arg(short, long)]
     input_file: Option<String>,
+    /// Name of the output package (Default 'output')
+    #[arg(short, long)]
+    name: Option<String>,
 }
 
 fn main() {
@@ -32,7 +35,7 @@ fn main() {
     );
 
     match args.input_file {
-        Some(file) => bindgen::gen(file),
+        Some(file) => bindgen::gen(file, args.name.unwrap_or("output".to_owned())),
         None => println!("Error: You need to provide a YAML schema to generate from."),
     }
 }

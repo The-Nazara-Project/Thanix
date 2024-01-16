@@ -104,18 +104,22 @@ struct Property {
 /// Create all necessary structures and directories for the crate.
 /// Requires `output` folder to exist.
 ///
+/// # Arguments
+///
+/// - `output_name: &str` - The name of the output library given by the CLI. Default `output/`.
+///
 /// # Panics
 ///
 /// This function panics when the `output/` directory does not exist.
-fn create_lib_dir() -> Result<(), Box<dyn std::error::Error>> {
+fn create_lib_dir(output_name: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting repackaging into crate...");
     let source_files = ["paths.rs", "types.rs"];
 
-    if !fs::metadata("output").is_ok() {
+    if !fs::metadata(output_name).is_ok() {
         panic!("Fatal: Output directory does not exist!");
     }
 
-    std::env::set_current_dir("output")?;
+    std::env::set_current_dir(output_name)?;
 
     for src_file in &source_files {
         if !fs::metadata(src_file).is_ok() {
@@ -126,43 +130,15 @@ fn create_lib_dir() -> Result<(), Box<dyn std::error::Error>> {
     let src_dir = "src";
     fs::create_dir_all(&src_dir)?;
 
-    for src_file in &source_files {
+    for src_file in source_files {
         let dest_path = format!("{}/{}", src_dir, src_file);
         fs::rename(src_file, &dest_path)?;
     }
 
-    let lib_rs = r#"// Your library code goes here.
-#[macro_use]
-extern crate serde_derive;
-
-extern crate serde;
-extern crate serde_json;
-extern crate url;
-extern crate reqwest;
-
-pub mod paths;
-pub mod types;"#;
     let mut lib_file = fs::File::create(format!("{}/lib.rs", src_dir))?;
-    write!(lib_file, "{}", lib_rs)?;
+    write!(lib_file, "{}", include_str!("templates/lib.rs.template"))?;
 
-    let cargo_toml = r#"[package]
-name = "your_library"
-version = "0.1.0"
-authors = ["Your Name"]
-edition = "2021"
-
-[lib]
-path = "src/lib.rs"
-
-[dependencies]
-serde = { version = "1.0.195", features = ["derive"] }
-serde_yaml = "0.9.30"
-reqwest = { version = "0.*", features = ["blocking", "json"] }
-
-[[bin]]
-name = "your_bin_name"
-path = "src/main.rs"
-"#;
+    let cargo_toml = format!(include_str!("templates/Cargo.toml.template"), output_name);
 
     fs::write("Cargo.toml", cargo_toml)?;
 
@@ -271,16 +247,16 @@ fn if_some<F: FnOnce(&T), T>(this: Option<T>, func: F) {
 }
 
 /// Generates the Rust bindings from a file.
-pub fn gen(input_path: impl AsRef<std::path::Path>) {
+pub fn gen(input_path: impl AsRef<std::path::Path>, output_name: String) {
     // Parse the schema.
     let input = std::fs::read_to_string(input_path).unwrap();
     let yaml: Schema = serde_yaml::from_str(&input).unwrap();
 
     // Generate output folder.
-    _ = std::fs::create_dir("output/");
+    _ = std::fs::create_dir(&output_name);
 
     // Create and open the output file for structs.
-    let mut types_file = File::create("output/types.rs").unwrap();
+    let mut types_file = File::create(output_name.clone() + "/types.rs").unwrap();
 
     // For every struct.
     for (name, comp) in &yaml.components.schemas {
@@ -350,7 +326,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>) {
     }
 
     // Create and open the output file for paths.
-    let mut paths_file = File::create("output/paths.rs").unwrap();
+    let mut paths_file = File::create(output_name.clone() + "/paths.rs").unwrap();
 
     // For every path.
     for (name, path) in &yaml.paths {
@@ -381,7 +357,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>) {
         });
     }
 
-    _ = match create_lib_dir() {
+    _ = match create_lib_dir(&output_name) {
         Ok(()) => (),
         Err(e) => {
             panic!("{}", e);
