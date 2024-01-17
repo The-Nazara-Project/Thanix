@@ -288,16 +288,16 @@ fn if_some<F: FnOnce(&T), T>(this: Option<T>, func: F) {
 }
 
 /// Generates the Rust bindings from a file.
-pub fn gen(input_path: impl AsRef<std::path::Path>, output_name: String) {
+pub fn gen(input_path: impl AsRef<std::path::Path>, url: String) {
     // Parse the schema.
     let input = std::fs::read_to_string(input_path).unwrap();
     let yaml: Schema = serde_yaml::from_str(&input).unwrap();
 
     // Generate output folder.
-    _ = std::fs::create_dir(&output_name);
+    _ = std::fs::create_dir("thanix_client");
 
     // Create and open the output file for structs.
-    let mut types_file = File::create(output_name.clone() + "/types.rs").unwrap();
+    let mut types_file = File::create("thanix_client/types.rs").unwrap();
     types_file
         .write_all(include_str!("templates/usings.template").as_bytes())
         .unwrap();
@@ -369,7 +369,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>, output_name: String) {
     }
 
     // Create and open the output file for paths.
-    let mut paths_file = File::create(output_name.clone() + "/paths.rs").unwrap();
+    let mut paths_file = File::create("thanix_client/paths.rs").unwrap();
 
     paths_file
         .write_all(include_str!("templates/usings.template").as_bytes())
@@ -404,9 +404,9 @@ pub fn gen(input_path: impl AsRef<std::path::Path>, output_name: String) {
         });
     }
     fs::write(
-        output_name.clone() + "/util.rs",
-        include_str!("templates/util.rs.template").as_bytes(),
+        "thanix_client/util.rs",
+        format!(include_str!("templates/util.rs.template"), url).as_bytes(),
     )
     .unwrap();
-    create_lib_dir(&output_name).unwrap();
+    create_lib_dir("thanix_client").unwrap();
 }
