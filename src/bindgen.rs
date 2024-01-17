@@ -1,8 +1,8 @@
+use convert_case::{Case, Casing};
 use serde::Deserialize;
 use serde_yaml::{Number, Value};
 use std::{
     collections::HashMap,
-    env::{current_dir, set_current_dir},
     fs::{self, File},
     io::Write,
 };
@@ -41,6 +41,8 @@ struct PathOp {
     #[serde(rename = "operationId")]
     operation_id: Option<String>,
     description: Option<String>,
+    #[serde(default)]
+    tags: Vec<String>,
     #[serde(default)]
     parameters: Vec<Parameter>,
     responses: Option<HashMap<String, Response>>,
@@ -113,22 +115,22 @@ struct Property {
 /// This function panics when the `output/` directory does not exist.
 fn create_lib_dir(output_name: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting repackaging into crate...");
-    let source_files = ["paths.rs", "types.rs"];
+    let source_files = ["paths.rs", "types.rs", "util.rs"];
 
-    if !fs::metadata(output_name).is_ok() {
+    if fs::metadata(output_name).is_err() {
         panic!("Fatal: Output directory does not exist!");
     }
 
     std::env::set_current_dir(output_name)?;
 
     for src_file in &source_files {
-        if !fs::metadata(src_file).is_ok() {
+        if fs::metadata(src_file).is_err() {
             panic!("Source file {} does not exist!", src_file);
         }
     }
 
     let src_dir = "src";
-    fs::create_dir_all(&src_dir)?;
+    fs::create_dir_all(src_dir)?;
 
     for src_file in source_files {
         let dest_path = format!("{}/{}", src_dir, src_file);
@@ -163,32 +165,72 @@ fn make_comment(input: String, indent: usize) -> String {
         .concat();
 }
 
-fn make_fn_name_from_path(input: String) -> String {
+fn make_fn_name_from_path(input: &str) -> String {
     input.replace("/api/", "").replace('/', "_")
 }
 
 /// Replaces reserved keywords in an input string for use in Rust.
-fn fix_keywords(input: String) -> String {
+fn fix_keywords(input: &str) -> String {
     input
         .replace("type", "typ")
         .replace("struct", "structure")
         .replace("fn", "func")
 }
 
-fn pathop_to_string(name: String, input: &PathOp, variant: &str) -> String {
-    format!(
-        "{}pub fn {}({}) -> Result<Response, Error> {{ return REQWEST_CLIENT.{}(format!(\"{}\")).execute().await; }}\n",
-        make_comment(input.description.clone().unwrap(), 0),
-        input.operation_id.clone().unwrap_or(make_fn_name_from_path(name.clone())),
-        input.parameters.iter().enumerate().map(|(s, p)| format!(
-                "{}: {}{}",
-                fix_keywords(p.name.clone()),
+fn pathop_to_string(path: &str, input: &PathOp, method: &str) -> String {
+    // Create a new struct for the query parameters.
+    let fn_struct_params = input
+        .parameters
+        // Filter out only the query inputs.
+        .iter()
+        .filter(|x| x.input == "query")
+        .enumerate()
+        .map(|(s, p)| {
+            format!(
+                "\t{}: {}{}\n",
+                fix_keywords(&p.name),
                 get_inner_type(p.schema.as_ref().unwrap().clone(), false),
-                if s == input.parameters.len() - 1 { "" } else { ", " }
-            )).collect::<String>(),
-        variant,
-        name
-    )
+                if s < &input.parameters.len() - 1 {
+                    ","
+                } else {
+                    ""
+                }
+            )
+        })
+        .collect::<String>();
+    let fn_name = input
+        .operation_id
+        .clone()
+        .unwrap_or(make_fn_name_from_path(&path));
+    let fn_struct_name = fn_name.to_case(Case::Pascal) + "Query";
+    let fn_struct = format!("#[derive(Debug, Serialize, Deserialize)]\npub struct {fn_struct_name} {{\n{fn_struct_params}}}");
+    let comment = make_comment(input.description.clone().unwrap(), 0);
+    let mut path_args = input
+        .parameters
+        // Filter out only the path inputs.
+        .iter()
+        .filter(|x| x.input == "path")
+        .enumerate()
+        .map(|(s, p)| {
+            format!(
+                "{}: {}{}",
+                fix_keywords(&p.name),
+                get_inner_type(p.schema.as_ref().unwrap().clone(), false),
+                if s < &input.parameters.len() - 1 {
+                    ","
+                } else {
+                    ""
+                }
+            )
+        })
+        .collect::<String>();
+    if !path_args.is_empty() {
+        path_args = ", ".to_owned() + &path_args;
+    }
+    return format!(
+        include_str!("templates/path.template"),
+        fn_struct, comment, fn_name, fn_struct_name, path_args, method, path
+    );
 }
 
 fn get_inner_type(items: Value, append_vec: bool) -> String {
@@ -211,14 +253,13 @@ fn get_inner_type(items: Value, append_vec: bool) -> String {
                 "number" => "f64".to_owned(),
                 "string" => match items.get("format") {
                     Some(x) => match x.as_str().unwrap() {
-                        "uri" => "Uri".to_owned(),
-                        "date-time" => "DateTime".to_owned(),
+                        "uri" => "Url".to_owned(),
                         _ => "String".to_owned(),
                     },
                     None => "String".to_owned(),
                 },
                 "boolean" => "bool".to_owned(),
-                "object" => "Json".to_owned(),
+                "object" => "String".to_owned(),
                 "array" => get_inner_type(
                     match items.get("items") {
                         Some(z) => z.clone(),
@@ -229,7 +270,7 @@ fn get_inner_type(items: Value, append_vec: bool) -> String {
                 _ => panic!("unhandled type!"),
             },
             // We don't know what this is so assume a JSON object.
-            None => "Json".to_owned(),
+            None => "String".to_owned(),
         },
     };
     if append_vec {
@@ -247,16 +288,19 @@ fn if_some<F: FnOnce(&T), T>(this: Option<T>, func: F) {
 }
 
 /// Generates the Rust bindings from a file.
-pub fn gen(input_path: impl AsRef<std::path::Path>, output_name: String) {
+pub fn gen(input_path: impl AsRef<std::path::Path>, url: String) {
     // Parse the schema.
     let input = std::fs::read_to_string(input_path).unwrap();
     let yaml: Schema = serde_yaml::from_str(&input).unwrap();
 
     // Generate output folder.
-    _ = std::fs::create_dir(&output_name);
+    _ = std::fs::create_dir("thanix_client");
 
     // Create and open the output file for structs.
-    let mut types_file = File::create(output_name.clone() + "/types.rs").unwrap();
+    let mut types_file = File::create("thanix_client/types.rs").unwrap();
+    types_file
+        .write_all(include_str!("templates/usings.template").as_bytes())
+        .unwrap();
 
     // For every struct.
     for (name, comp) in &yaml.components.schemas {
@@ -285,8 +329,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>, output_name: String) {
                 // "string" can mean either a plain or formatted string or an enum declaration.
                 "string" => match &prop.format {
                     Some(x) => match x.as_str() {
-                        "uri" => "Uri".to_owned(),
-                        "date-time" => "DateTime".to_owned(),
+                        "uri" => "Url".to_owned(),
                         _ => "String".to_owned(),
                     },
                     None => "String".to_owned(),
@@ -295,7 +338,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>, output_name: String) {
                 "number" => "f64".to_owned(),
                 "boolean" => "bool".to_owned(),
                 "array" => get_inner_type(prop.items.as_ref().unwrap().clone(), true),
-                "object" => "Json".to_owned(),
+                "object" => "String".to_owned(),
                 _ => todo!(),
             };
 
@@ -326,41 +369,44 @@ pub fn gen(input_path: impl AsRef<std::path::Path>, output_name: String) {
     }
 
     // Create and open the output file for paths.
-    let mut paths_file = File::create(output_name.clone() + "/paths.rs").unwrap();
+    let mut paths_file = File::create("thanix_client/paths.rs").unwrap();
+
+    paths_file
+        .write_all(include_str!("templates/usings.template").as_bytes())
+        .unwrap();
 
     // For every path.
     for (name, path) in &yaml.paths {
         if_some(path.get.as_ref(), |op| {
             paths_file
-                .write_all(pathop_to_string(name.clone(), op, "get").as_bytes())
+                .write_all(pathop_to_string(name, op, "get").as_bytes())
                 .unwrap()
         });
         if_some(path.put.as_ref(), |op| {
             paths_file
-                .write_all(pathop_to_string(name.clone(), op, "put").as_bytes())
+                .write_all(pathop_to_string(name, op, "put").as_bytes())
                 .unwrap()
         });
         if_some(path.post.as_ref(), |op| {
             paths_file
-                .write_all(pathop_to_string(name.clone(), op, "post").as_bytes())
+                .write_all(pathop_to_string(name, op, "post").as_bytes())
                 .unwrap()
         });
         if_some(path.patch.as_ref(), |op| {
             paths_file
-                .write_all(pathop_to_string(name.clone(), op, "patch").as_bytes())
+                .write_all(pathop_to_string(name, op, "patch").as_bytes())
                 .unwrap()
         });
         if_some(path.delete.as_ref(), |op| {
             paths_file
-                .write_all(pathop_to_string(name.clone(), op, "delete").as_bytes())
+                .write_all(pathop_to_string(name, op, "delete").as_bytes())
                 .unwrap()
         });
     }
-
-    _ = match create_lib_dir(&output_name) {
-        Ok(()) => (),
-        Err(e) => {
-            panic!("{}", e);
-        }
-    };
+    fs::write(
+        "thanix_client/util.rs",
+        format!(include_str!("templates/util.rs.template"), url).as_bytes(),
+    )
+    .unwrap();
+    create_lib_dir("thanix_client").unwrap();
 }

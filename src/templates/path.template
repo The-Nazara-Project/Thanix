@@ -1,0 +1,6 @@
+{}
+{}
+pub fn {}(query: {}{}) -> Result<reqwest::blocking::Response, reqwest::Error> {{
+    return REQWEST_CLIENT.lock().unwrap().as_ref().unwrap().{}(format!("{{}}{}?{{}}", REQWEST_BASE_URL, serde_qs::to_string(&query).unwrap())).send();
+}}
+
