@@ -9,9 +9,6 @@ struct Args {
     /// Path to a YAML schema file.
     #[arg(short, long)]
     input_file: Option<String>,
-    /// URI of your netbox instance
-    #[arg(long)]
-    uri: String,
 }
 
 fn main() {
@@ -35,7 +32,7 @@ fn main() {
     );
 
     match args.input_file {
-        Some(file) => bindgen::gen(file, args.uri),
+        Some(file) => bindgen::gen(file),
         None => println!("Error: You need to provide a YAML schema to generate from."),
     }
 }

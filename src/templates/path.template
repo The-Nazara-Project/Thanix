@@ -1,6 +1,6 @@
 {}
 {}
 pub fn {}(query: {}{}) -> Result<reqwest::blocking::Response, reqwest::Error> {{
-    return REQWEST_CLIENT.lock().unwrap().as_ref().unwrap().{}(format!("{{}}{}?{{}}", REQWEST_BASE_URL, serde_qs::to_string(&query).unwrap())).send();
+    let state = THANIX_CLIENT.lock().unwrap().as_ref().unwrap();
+    return state.client.{}(format!("{{}}{}?{{}}", state.base_url, serde_qs::to_string(&query).unwrap())).header("Authorization", format!("Token {{}}", self.authentication_token)).send();
 }}
-
