@@ -1,7 +1,5 @@
 {}
 {}
-pub fn {}(query: {}{}) -> Result<reqwest::blocking::Response, reqwest::Error> {{
-    let binding = THANIX_CLIENT.lock().unwrap();
-    let state = binding.as_ref().unwrap();
+pub fn {}(state: &ThanixClient, query: {}{}) -> Result<reqwest::blocking::Response, reqwest::Error> {{
     return state.client.{}(format!("{{}}{}?{{}}", state.base_url, serde_qs::to_string(&query).unwrap())).header("Authorization", format!("Token {{}}", state.authentication_token)).send();
 }}
