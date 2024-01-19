@@ -49,10 +49,8 @@ cargo run -- --input-file $PATH_TO_YOUR_YAML --uri $URI_TO_YOUR_API
 This may look like this:
 
 ```bash
-cargo run -- --input-file ./api_config.yaml --uri https://demo.netbox.dev
+cargo run -- --input-file ./api_config.yaml
 ```
-
-> **NOTE:** Make sure that you **do not end your URI with a slash (/)**. As this would mangle the API paths.
 
 This step will result in your `thanix_client` being generated.
 
@@ -60,7 +58,7 @@ To view the next steps please scroll **down to the Usage section**.
 
 Optional:
 
-3. Install Thanix using `cargo install`.
+1. Install Thanix using `cargo install`.
 
 You can also install the crate on your system, so you always have it available.
 To do so, run this command while in the Thanix project directory:
@@ -92,10 +90,8 @@ We will update you as soon as we have news.
 After you have installed Thanix in a way you see fit, you use it by passing it **two mandatory parameters** like this:
 
 ```bash
-thanix --input-file $YOUR_API_YAML --uri $YOUR_API_URI
+thanix --input-file $YOUR_API_YAML
 ```
 
 - The `--input-file` parameter is a path to your `.yaml`-file you want to use as an input. This is usually the API
   schema file your want to generate a client for.
-- The `--uri` is the URI to your API in a format like this: `https://demo.netbox.dev`.
-  **Make sure this URI does not end with a `/`**

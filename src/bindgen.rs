@@ -288,7 +288,7 @@ fn if_some<F: FnOnce(&T), T>(this: Option<T>, func: F) {
 }
 
 /// Generates the Rust bindings from a file.
-pub fn gen(input_path: impl AsRef<std::path::Path>, url: String) {
+pub fn gen(input_path: impl AsRef<std::path::Path>) {
     // Parse the schema.
     let input = std::fs::read_to_string(input_path).unwrap();
     let yaml: Schema = serde_yaml::from_str(&input).unwrap();
@@ -405,7 +405,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>, url: String) {
     }
     fs::write(
         "thanix_client/util.rs",
-        format!(include_str!("templates/util.rs.template"), url).as_bytes(),
+        include_str!("templates/util.rs.template").as_bytes(),
     )
     .unwrap();
     create_lib_dir("thanix_client").unwrap();
