@@ -327,13 +327,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>) {
 
             let mut type_result = match yaml_type {
                 // "string" can mean either a plain or formatted string or an enum declaration.
-                "string" => match &prop.format {
-                    Some(x) => match x.as_str() {
-                        "uri" => "Url".to_owned(),
-                        _ => "String".to_owned(),
-                    },
-                    None => "String".to_owned(),
-                },
+                "string" => "String".to_owned(),
                 "integer" => "i64".to_owned(),
                 "number" => "f64".to_owned(),
                 "boolean" => "bool".to_owned(),
