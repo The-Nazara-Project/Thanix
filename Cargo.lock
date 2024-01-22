@@ -215,7 +215,7 @@ dependencies = [
 
 [[package]]
 name = "thanix"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "clap",
  "convert_case",
