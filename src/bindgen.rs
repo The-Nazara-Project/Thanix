@@ -332,7 +332,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>) {
                 "number" => "f64".to_owned(),
                 "boolean" => "bool".to_owned(),
                 "array" => get_inner_type(prop.items.as_ref().unwrap().clone(), true),
-                "object" => "String".to_owned(),
+                "object" => "serde_json::value::Value".to_owned(),
                 _ => todo!(),
             };
 
