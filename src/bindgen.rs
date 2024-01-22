@@ -187,7 +187,7 @@ fn pathop_to_string(path: &str, input: &PathOp, method: &str) -> String {
         .enumerate()
         .map(|(s, p)| {
             format!(
-                "\t{}: {}{}\n",
+                "\t{}: Option<{}>{}\n",
                 fix_keywords(&p.name),
                 get_inner_type(p.schema.as_ref().unwrap().clone(), false),
                 if s < &input.parameters.len() - 1 {
@@ -203,7 +203,7 @@ fn pathop_to_string(path: &str, input: &PathOp, method: &str) -> String {
         .clone()
         .unwrap_or(make_fn_name_from_path(&path));
     let fn_struct_name = fn_name.to_case(Case::Pascal) + "Query";
-    let fn_struct = format!("#[derive(Debug, Serialize, Deserialize)]\npub struct {fn_struct_name} {{\n{fn_struct_params}}}");
+    let fn_struct = format!("#[derive(Debug, Serialize, Deserialize, Default)]\npub struct {fn_struct_name} {{\n{fn_struct_params}}}");
     let comment = make_comment(input.description.clone().unwrap(), 0);
     let mut path_args = input
         .parameters
