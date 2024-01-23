@@ -13,6 +13,8 @@
 Thanix is an experimental cli application written in Rust for generating Rust code from yaml schema files like they are
 found as openAPI schemas.
 
+[![build result](https://build.opensuse.org/projects/home:ByteOtter:nazara-project/packages/thanix/badge.svg?type=default)](https://build.opensuse.org/package/show/home:ByteOtter:nazara-project/thanix)
+
 ## Installation
 
 Be aware that Thanix currently is only developed on and for Linux distributions.<br>
