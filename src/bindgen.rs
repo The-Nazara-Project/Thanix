@@ -314,7 +314,9 @@ pub fn gen(input_path: impl AsRef<std::path::Path>) {
         // Write description.
         types_file.write_all(desc.as_bytes()).unwrap();
         // Write name.
-        types_file.write_all(b"#[derive(Debug, Serialize, Deserialize, Default)]\npub struct ").unwrap();
+        types_file
+            .write_all(b"#[derive(Debug, Serialize, Deserialize, Default)]\npub struct ")
+            .unwrap();
         types_file.write_all(name.as_bytes()).unwrap();
         types_file.write_all(b" {\n").unwrap();
         // For every struct field.
