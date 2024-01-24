@@ -357,7 +357,7 @@ pub fn gen(input_path: impl AsRef<std::path::Path>) {
             };
             // Write the field to file.
             types_file
-                .write_all(format!("\t{}: {},\n", name, type_result).as_bytes())
+                .write_all(format!("\t pub {}: {},\n", name, type_result).as_bytes())
                 .unwrap();
             fields.push((name, type_result));
         }
