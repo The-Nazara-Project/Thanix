@@ -45,7 +45,7 @@ comfortable.
 **Do not forget to pass the required CLI parameters to Thanix when doing this.**
 
 ```bash
-cargo run -- --input-file $PATH_TO_YOUR_YAML --uri $URI_TO_YOUR_API
+cargo run -- --input-file $PATH_TO_YOUR_YAML
 ```
 
 This may look like this:
