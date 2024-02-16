@@ -85,7 +85,29 @@ cargo install thanix
 
 We are working on building packages for a variety of Linux distributions starting with `openSUSE Tumbleweed`.
 
-We will update you as soon as we have news.
+You can install Thanix for openSUSE Tumbleweed using these steps:
+
+1. Add Repository
+```bash
+sudo zypper ar https://download.opensuse.org/repositories/home:/ByteOtter:/nazara-project/openSUSE_Tumbleweed/home:ByteOtter:nazara-project.repo
+8m
+```
+
+2. Refresh Repositories
+```bash
+sudo zypper ref
+```
+
+3. Install Thanix
+```bash
+sudo zypper install Thanix
+```
+
+Zypper should now install Thanix for you.
+
+> NOTE: The repository location is temporary and will be changed once Thanix is out of beta.
+> If you do not wish to deal with this, we suggest you install Thanix using one of the methods listed above.
+> Thank you for understanding.
 
 ## Usage
 
