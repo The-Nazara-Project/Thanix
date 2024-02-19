@@ -46,6 +46,8 @@ struct PathOp {
     #[serde(default)]
     parameters: Vec<Parameter>,
     responses: Option<HashMap<String, Response>>,
+    #[serde(rename = "requestBody")]
+    request_body: Option<Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -224,13 +226,65 @@ fn pathop_to_string(path: &str, input: &PathOp, method: &str) -> String {
             )
         })
         .collect::<String>();
+
+    let mut fn_body_name: String = String::new();
+    match &input.request_body {
+        Some(_) => {
+            fn_body_name = match get_request_type(input.request_body.as_ref().unwrap()) {
+                Some(body) => {
+                    let req_body= format!("request_body: {},", body);
+                    return req_body;
+                }
+                None => String::new(),
+            };
+        }
+        None => {}
+    };
+
     if !path_args.is_empty() {
         path_args = ", ".to_owned() + &path_args;
     }
+
     return format!(
         include_str!("templates/path.template"),
-        fn_struct, comment, fn_name, fn_struct_name, path_args, method, path
+        fn_struct, comment, fn_name, fn_body_name, fn_struct_name, path_args, method, path
     );
+}
+
+/// Get type of request body defined in the api config yaml.
+fn get_request_type(request_body: &Value) -> Option<String> {
+    let content: &Value = request_body.get("content").unwrap();
+
+    let mut ref_string = match content.get("application/json") {
+        Some(x) => {
+            let schema_ref = match x.get("schema").unwrap().get("$ref") {
+                Some(target_string) => {
+                    target_string.as_str().unwrap()
+                },
+                None => {
+                    match x.get("items") {
+                        Some(target) => {
+                            target.get("$ref").unwrap().as_str().unwrap()
+                        },
+                        None => {
+                            ""
+                        }
+                    }
+                }
+            };
+            schema_ref
+        },
+        None => {
+            ""
+        }
+    };
+    ref_string = match ref_string.split("/").last() {
+        Some(x) => x,
+        None => {
+            return None;
+        }
+    };
+    return Some(ref_string.to_owned());
 }
 
 fn get_inner_type(items: Value, append_vec: bool) -> String {
