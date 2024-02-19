@@ -47,7 +47,50 @@ struct PathOp {
     parameters: Vec<Parameter>,
     responses: Option<HashMap<String, Response>>,
     #[serde(rename = "requestBody")]
-    request_body: Option<Value>,
+    request_body: Option<RequestContent>,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct RequestContent {
+    #[serde(rename = "content")]
+    request_map: Option<HashMap<String, RequestSchema>>
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct RequestSchema {
+    #[serde(rename = "schema")]
+    schema: RequestBody
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+enum RequestBody {
+    Ref(RequestRef),
+    Array(RequestArray)
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct RequestRef {
+    #[serde(rename = "$ref")]
+    request_ref: String
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct RequestArray {
+    #[serde(rename = "type")]
+    request_type: String,
+    items: Option<ReqItem>
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct ReqItem {
+    #[serde(rename="items")]
+    item: RequestRef
 }
 
 #[derive(Debug, Deserialize)]
@@ -227,19 +270,7 @@ fn pathop_to_string(path: &str, input: &PathOp, method: &str) -> String {
         })
         .collect::<String>();
 
-    let mut fn_body_name: String = String::new();
-    match &input.request_body {
-        Some(_) => {
-            fn_body_name = match get_request_type(input.request_body.as_ref().unwrap()) {
-                Some(body) => {
-                    let req_body= format!("request_body: {},", body);
-                    return req_body;
-                }
-                None => String::new(),
-            };
-        }
-        None => {}
-    };
+    let fn_body_name: String = get_request_type(&input).to_owned();
 
     if !path_args.is_empty() {
         path_args = ", ".to_owned() + &path_args;
@@ -252,39 +283,28 @@ fn pathop_to_string(path: &str, input: &PathOp, method: &str) -> String {
 }
 
 /// Get type of request body defined in the api config yaml.
-fn get_request_type(request_body: &Value) -> Option<String> {
-    let content: &Value = request_body.get("content").unwrap();
+fn get_request_type(request_op: &PathOp) -> &String {
+    let x = request_op.request_body.as_ref().unwrap();
 
-    let mut ref_string = match content.get("application/json") {
-        Some(x) => {
-            let schema_ref = match x.get("schema").unwrap().get("$ref") {
-                Some(target_string) => {
-                    target_string.as_str().unwrap()
+    let request_map = &x.request_map.as_ref().unwrap()["application/json"];
+
+    let request_schema = &request_map.schema;
+
+    match request_schema {
+        RequestBody::Ref(x) => {
+            return &x.request_ref
+        },
+        RequestBody::Array(x) => {
+            match &x.items {
+                Some(list) => {
+                    return &list.item.request_ref;
                 },
                 None => {
-                    match x.get("items") {
-                        Some(target) => {
-                            target.get("$ref").unwrap().as_str().unwrap()
-                        },
-                        None => {
-                            ""
-                        }
-                    }
+                    panic!("'items' array does not exist in schema!");
                 }
-            };
-            schema_ref
-        },
-        None => {
-            ""
+            }
         }
-    };
-    ref_string = match ref_string.split("/").last() {
-        Some(x) => x,
-        None => {
-            return None;
-        }
-    };
-    return Some(ref_string.to_owned());
+    }
 }
 
 fn get_inner_type(items: Value, append_vec: bool) -> String {
@@ -345,7 +365,14 @@ fn if_some<F: FnOnce(&T), T>(this: Option<T>, func: F) {
 pub fn gen(input_path: impl AsRef<std::path::Path>) {
     // Parse the schema.
     let input = std::fs::read_to_string(input_path).unwrap();
-    let yaml: Schema = serde_yaml::from_str(&input).unwrap();
+    let yaml: Schema = match serde_yaml::from_str(&input) {
+        Ok(value) => {
+            value
+        },
+        Err(err) => {
+            panic!("{}", err)
+        }
+    };
 
     // Generate output folder.
     _ = std::fs::create_dir("thanix_client");
