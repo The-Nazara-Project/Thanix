@@ -14,7 +14,7 @@ pub fn gen(name: &str, schema: &Schema) -> Option<String> {
     };
 
     // Assemble struct string.
-    let mut result = "struct ".to_owned();
+    let mut result = "#[derive(Serialize, Deserialize, Debug)]\npub struct ".to_owned();
     result += name;
     result += " {\n";
 

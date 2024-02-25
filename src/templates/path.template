@@ -1,4 +1,1 @@
-    return state.client
-        .{}(format!("{{}}{}?{{}}", state.base_url, serde_qs::to_string(&query).unwrap()))
-        .header("Authorization", format!("Token {{}}", state.authentication_token)){}
-        .send();
+    return state.client.{}(format!("{{}}{}?{{}}", state.base_url{})).header("Authorization", format!("Token {{}}", state.authentication_token)){}{}.send();

@@ -48,7 +48,7 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
         .clone()
         .unwrap_or(make_fn_name_from_path(name) + "_" + op_type);
 
-    let mut fn_struct_params = Vec::new();
+    let mut fn_query_params = Vec::new();
     let mut fn_header_params = Vec::new();
     let mut fn_path_params = Vec::new();
 
@@ -68,7 +68,7 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
                     _ => continue,
                 };
                 // Format as a struct field.
-                fn_struct_params.push(format!(
+                fn_query_params.push(format!(
                     "{}\t{}: Option<{}>,\n",
                     make_comment(parameter_data.description, 1),
                     parameter_data.name.into_safe(),
@@ -109,13 +109,27 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
         }
     }
 
-    // Build the query struct for this function.
-    let fn_struct_name = fn_name.to_case(Case::Pascal) + "Query";
-    let fn_struct = format!(
-        "#[derive(Serialize, Deserialize, Debug)]\npub struct {} {{\n{}\n}}\n",
-        fn_struct_name,
-        fn_struct_params.into_iter().collect::<String>()
-    );
+    // Build the request body.
+    let fn_request_type = match &op.request_body {
+        Some(req) => match req {
+            ReferenceOr::Item(x) => match x.content.get("application/json") {
+                Some(media) => Some(bindgen::type_to_string(&media.schema.clone().unwrap())),
+                None => None,
+            },
+            _ => None,
+        },
+        None => None,
+    };
+
+    let fn_request_args = match &fn_request_type {
+        Some(x) => format!(", body: {}", x),
+        None => String::new(),
+    };
+
+    let fn_request_body = match &fn_request_type {
+        Some(_) => format!(".json(&body)"),
+        None => String::new(),
+    };
 
     // Build the header args.
     let fn_header_args = &fn_header_params
@@ -129,19 +143,48 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
         .map(|(name, _)| format!("\n.header(\"{}\", header_{})", &name, &name))
         .collect::<String>();
 
+    // Build the function args.
+    let fn_path_args = &fn_path_params.into_iter().collect::<String>();
+
+    // Build the query struct for this function if we have at least one parameter.
+    let need_query = fn_query_params.len() > 0;
+    let fn_query_name = fn_name.to_case(Case::Pascal) + "Query";
+    let fn_query_struct = if need_query {
+        format!(
+            "#[derive(Serialize, Deserialize, Debug)]\npub struct {} {{\n{}\n}}\n",
+            fn_query_name,
+            fn_query_params.clone().into_iter().collect::<String>()
+        )
+    } else {
+        String::new()
+    };
+    let fn_query_args = if need_query {
+        format!(", query: {}", fn_query_name)
+    } else {
+        String::new()
+    };
+    let fn_query_body = if need_query {
+        ", serde_qs::to_string(&query).unwrap()"
+    } else {
+        ", \"\""
+    };
+
     // Build the function body.
     let fn_body = format!(
         include_str!("templates/path.template"),
-        op_type, name, fn_header
+        op_type, name, fn_query_body, fn_header, fn_request_body
     );
 
-    // Build the function args.
-    let fn_path_args = fn_path_params.into_iter().collect::<String>();
-
-    // TODO
     format!(
-        "{}{}pub fn {}(state: &ThanixClient, query: {}{}{}) -> Result<Response, Error> {{\n{}\n}}\n",
-        fn_struct, description, fn_name, fn_struct_name, fn_header_args, fn_path_args, fn_body
+        "{}{}pub fn {}(state: &ThanixClient{}{}{}{}) -> Result<Response, Error> {{\n{}\n}}\n",
+        fn_query_struct,
+        description,
+        fn_name,
+        fn_query_args,
+        fn_request_args,
+        fn_header_args,
+        fn_path_args,
+        fn_body
     )
 }
 
