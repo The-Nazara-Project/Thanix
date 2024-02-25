@@ -93,7 +93,10 @@ fn create_lib_dir(output_path: &Path) -> io::Result<()> {
     )?;
 
     // Create the "README.md" file.
-    fs::write("README.md", include_str!("templates/README.md.template"))?;
+    fs::write(
+        output_path.join("README.md"),
+        include_str!("templates/README.md.template"),
+    )?;
 
     println!("Output successfully repackaged!");
     Ok(())
