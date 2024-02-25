@@ -244,7 +244,7 @@ dependencies = [
 
 [[package]]
 name = "thanix"
-version = "0.1.0-alpha.9"
+version = "0.1.0-alpha.10"
 dependencies = [
  "check_keyword",
  "clap",
