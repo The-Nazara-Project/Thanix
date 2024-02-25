@@ -31,7 +31,7 @@ pub fn gen(name: &str, schema: &Schema) -> Option<String> {
             }
         }
         result += "\t";
-        result += &prop_name.clone().into_safe();
+        result += &format!("pub {}", &prop_name.clone().into_safe());
         result += ": ";
         result += &type_name;
         result += ",\n";
