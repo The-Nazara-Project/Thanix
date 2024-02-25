@@ -123,7 +123,39 @@ pub fn type_to_string(ty: &ReferenceOr<Schema>) -> String {
                 SchemaKind::Type(t) => match t {
                     Type::String(_) => "String".to_owned(),
                     Type::Number(_) => "f64".to_owned(),
-                    Type::Integer(_) => "i64".to_owned(),
+                    Type::Integer(int) => {
+                        let signed = match int.minimum {
+                            Some(x) => x < 0,
+                            None => false,
+                        };
+                        let int_size = match int.maximum {
+                            Some(x) => {
+                                if signed {
+                                    if x <= i8::MAX.into() {
+                                        "i8"
+                                    } else if x <= i16::MAX.into() {
+                                        "i16"
+                                    } else if x <= i32::MAX.into() {
+                                        "i32"
+                                    } else {
+                                        "i64"
+                                    }
+                                } else {
+                                    if x <= u8::MAX.into() {
+                                        "u8"
+                                    } else if x <= u16::MAX.into() {
+                                        "u16"
+                                    } else if x <= u32::MAX.into() {
+                                        "u32"
+                                    } else {
+                                        "u64"
+                                    }
+                                }
+                            }
+                            None => "i64",
+                        };
+                        return int_size.to_owned();
+                    }
                     // JSON object, but Rust has no easy way to support this, so just ask for a string.
                     Type::Object(_) => "String".to_owned(),
                     Type::Boolean(_) => "bool".to_owned(),
