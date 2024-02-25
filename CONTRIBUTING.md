@@ -15,7 +15,7 @@ This will ensure that you have all the necessary tools and libraries to build an
 4. **Install and set up pre-commit for code quality checks**. This tool will automatically execute the `hooks` we implemented
 which will check your code for formatting or styling issue before each commit.
 
-Note: If `pre-commit` fails on execution, be sure to run `cargo format` and `cargo clippy` on your code and fix any issues
+Note: If `pre-commit` fails on execution, be sure to run `cargo fmt` and `cargo clippy` on your code and fix any issues
 raised by these tools.
 
 # Making changes
