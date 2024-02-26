@@ -192,7 +192,7 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
     result += ", Error>";
 
     // Build the function body.
-    result += " {\n\tstate.client.";
+    result += " {\n\tlet r#response = state.client.";
     result += op_type;
     result += "(format!(\"{}";
     result += name;
@@ -215,9 +215,31 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
     fn_header_params
         .iter()
         .for_each(|(name, _)| result += &format!("\n.header(\"{}\", header_{})", &name, &name));
-    result += "\t\t.send()?\n";
-    result += "\t\t.json()\n";
-    result += "}\n";
+    result += "\t\t.send()?;\n";
+    result += "\tmatch r#response.status().as_u16() {\n";
+
+    // Match response code.
+    for (status, response) in &op.responses.responses {
+        match response {
+            ReferenceOr::Item(x) => {
+                if let Some(y) = &x.content.get("application/json") {
+                    result += &format!(
+                        "\t\t{} => {{ Ok({}::Http{}(r#response.json::<{}>()?)) }},\n",
+                        status,
+                        &fn_response_name,
+                        status,
+                        &bindgen::type_to_string(&y.schema.as_ref().unwrap())
+                    );
+                }
+            }
+            _ => (),
+        }
+    }
+
+    // Unknown response code.
+    result += "\t\t_ => { Ok(";
+    result += &fn_response_name;
+    result += "::None) }\n\t}\n}\n";
 
     return result;
 }
