@@ -1,3 +1,5 @@
+#![allow(warnings)]
+
 use crate::util::ThanixClient;
 use crate::types::*;
 use serde_qs;
