@@ -131,8 +131,7 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
 
     // Build the response enum.
     let fn_response_name = fn_name.to_case(Case::Pascal) + "Response";
-    result +=
-        "#[derive(Debug)]\npub enum ";
+    result += "#[derive(Debug)]\npub enum ";
     result += &fn_response_name;
     result += " {\n";
 
