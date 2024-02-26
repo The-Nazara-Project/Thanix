@@ -120,7 +120,7 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
     let need_query = fn_query_params.len() > 0;
     let fn_query_name = fn_name.to_case(Case::Pascal) + "Query";
     let fn_query_struct = format!(
-        "#[derive(Serialize, Deserialize, Debug, Default)]\npub struct {} {{\n{}\n}}\n",
+        "#[derive(Serialize, Deserialize, Debug, Default, Clone)]\npub struct {} {{\n{}\n}}\n",
         fn_query_name,
         fn_query_params.clone().into_iter().collect::<String>()
     );
@@ -131,7 +131,8 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
 
     // Build the response enum.
     let fn_response_name = fn_name.to_case(Case::Pascal) + "Response";
-    result += "#[derive(Serialize, Deserialize, Debug, Default)]\n#[serde(untagged)]\npub enum ";
+    result +=
+        "#[derive(Serialize, Deserialize, Debug, Default, Clone)]\n#[serde(untagged)]\npub enum ";
     result += &fn_response_name;
     result += " {\n";
 
