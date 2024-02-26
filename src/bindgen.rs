@@ -157,7 +157,9 @@ pub fn type_to_string(ty: &ReferenceOr<Schema>) -> String {
                         int_size.to_owned()
                     }
                     // JSON object, but Rust has no easy way to support this, so just ask for a string.
-                    Type::Object(_) => "Option<std::collections::HashMap<String, serde_json::Value>>".to_owned(),
+                    Type::Object(_) => {
+                        "Option<std::collections::HashMap<String, serde_json::Value>>".to_owned()
+                    }
                     Type::Boolean(_) => "bool".to_owned(),
                     Type::Array(x) => {
                         let items = x.items.as_ref().unwrap().clone().unbox();
@@ -166,7 +168,7 @@ pub fn type_to_string(ty: &ReferenceOr<Schema>) -> String {
                 },
                 SchemaKind::AllOf { all_of } => {
                     format!("Option<{}>", type_to_string(&all_of[0].clone()))
-                },
+                }
                 // Very likely a JSON object.
                 _ => "serde_json::Value".to_owned(),
             };
