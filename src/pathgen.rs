@@ -131,8 +131,7 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
 
     // Build the response enum.
     let fn_response_name = fn_name.to_case(Case::Pascal) + "Response";
-    result +=
-        "#[derive(Serialize, Deserialize, Debug, Default, Clone)]\n#[serde(untagged)]\npub enum ";
+    result += "#[derive(Debug)]\npub enum ";
     result += &fn_response_name;
     result += " {\n";
 
@@ -152,8 +151,7 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
         }
     }
 
-    result += "\t#[default]\n";
-    result += "\tNone\n";
+    result += "\tOther(Response)\n";
     result += "}\n";
 
     // Build function description.
@@ -238,9 +236,9 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
     }
 
     // Unknown response code.
-    result += "\t\t_ => { Ok(";
+    result += "\t\tr#other_status => { Ok(";
     result += &fn_response_name;
-    result += "::None) }\n\t}\n}\n";
+    result += "::Other(r#response)) }\n\t}\n}\n";
 
     return result;
 }
