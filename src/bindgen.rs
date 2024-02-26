@@ -1,106 +1,57 @@
-use convert_case::{Case, Casing};
-use serde::Deserialize;
-use serde_yaml::{Number, Value};
+use crate::pathgen;
+use crate::structgen;
+use openapiv3::Schema;
+use openapiv3::SchemaKind;
+use openapiv3::Type;
+use openapiv3::{OpenAPI, ReferenceOr};
 use std::{
-    collections::HashMap,
     fs::{self, File},
-    io::Write,
+    io::{self, Write},
+    path::Path,
 };
 
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct Schema {
-    #[serde(rename = "openapi")]
-    open_api: String,
-    info: SchemaInfo,
-    paths: HashMap<String, Path>,
-    components: ComponentSchemas,
-}
+/// Generate Rust bindings from an OpenAPI schema.
+pub fn gen(input_path: impl AsRef<Path>, output_path: impl AsRef<Path>) {
+    // Parse the schema.
+    let input = fs::read_to_string(input_path).unwrap();
+    let api: OpenAPI = serde_yaml::from_str(&input).unwrap();
 
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct SchemaInfo {
-    title: String,
-    version: String,
-    license: HashMap<String, String>,
-}
+    // Populate the output directory.
+    let output_path = output_path.as_ref();
+    create_lib_dir(output_path).unwrap();
 
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct Path {
-    get: Option<PathOp>,
-    post: Option<PathOp>,
-    put: Option<PathOp>,
-    patch: Option<PathOp>,
-    delete: Option<PathOp>,
-}
+    // Create and open the output file for structs.
+    let mut types_file = File::create(output_path.join("src/").join("types.rs")).unwrap();
+    // TODO: We don't really need these.
+    //write!(types_file, "{}", include_str!("templates/usings.template")).unwrap();
 
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct PathOp {
-    #[serde(rename = "operationId")]
-    operation_id: Option<String>,
-    description: Option<String>,
-    #[serde(default)]
-    tags: Vec<String>,
-    #[serde(default)]
-    parameters: Vec<Parameter>,
-    responses: Option<HashMap<String, Response>>,
-}
+    // For every component.
+    for (name, schema) in &api.components.unwrap().schemas {
+        let s = match schema {
+            ReferenceOr::Item(x) => x,
+            _ => continue,
+        };
+        // Generate struct and write it to file.
+        if let Some(structure) = structgen::gen(name, s) {
+            types_file.write_all(structure.as_bytes()).unwrap();
+        }
+    }
 
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct Parameter {
-    #[serde(rename = "in")]
-    input: String,
-    name: String,
-    schema: Option<Value>,
-}
+    // Create and open the output file for paths.
+    let mut paths_file = File::create(output_path.join("src/").join("paths.rs")).unwrap();
+    write!(paths_file, "{}", include_str!("templates/usings.template")).unwrap();
 
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct Response {}
-
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct ComponentSchemas {
-    schemas: HashMap<String, Component>,
-    #[serde(rename = "securitySchemes")]
-    security_schemes: HashMap<String, Component>,
-}
-
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-struct Component {
-    #[serde(rename = "type")]
-    typ: String,
-    description: Option<String>,
-    #[serde(default)]
-    properties: HashMap<String, Property>,
-    #[serde(default)]
-    required: Vec<String>,
-}
-
-#[derive(Debug, Deserialize, Default)]
-#[allow(dead_code)]
-struct Property {
-    #[serde(rename = "type")]
-    typ: Option<String>,
-    #[serde(rename = "readOnly")]
-    read_only: Option<bool>,
-    format: Option<String>,
-    description: Option<String>,
-    #[serde(rename = "minLength")]
-    min_length: Option<Number>,
-    #[serde(rename = "maxLength")]
-    max_length: Option<Number>,
-    #[serde(rename = "enum")]
-    enumeration: Option<Vec<String>>,
-    nullable: Option<bool>,
-    properties: Option<Value>,
-    items: Option<Value>,
-    #[serde(rename = "allOf")]
-    all_of: Option<Vec<Value>>,
+    // For every path.
+    for (name, path) in &api.paths.paths {
+        let p = match path {
+            ReferenceOr::Item(x) => x,
+            _ => continue,
+        };
+        // Generate paths and write to file.
+        if let Some(paths) = pathgen::gen(name, p) {
+            paths_file.write_all(paths.as_bytes()).unwrap();
+        }
+    }
 }
 
 /// Create all necessary structures and directories for the crate.
@@ -108,301 +59,119 @@ struct Property {
 ///
 /// # Arguments
 ///
-/// - `output_name: &str` - The name of the output library given by the CLI. Default `output/`.
-///
-/// # Panics
-///
-/// This function panics when the `output/` directory does not exist.
-fn create_lib_dir(output_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+/// - `output_name: &Path` - The name of the output library given by the CLI. Default `output`.
+fn create_lib_dir(output_path: &Path) -> io::Result<()> {
     println!("Starting repackaging into crate...");
-    let source_files = ["paths.rs", "types.rs", "util.rs"];
 
-    if fs::metadata(output_name).is_err() {
-        panic!("Fatal: Output directory does not exist!");
-    }
+    // Create the output folder.
+    _ = fs::create_dir(output_path);
 
-    std::env::set_current_dir(output_name)?;
+    // Create the "src" subdirectory.
+    let src_dir = output_path.join("src/");
+    fs::create_dir_all(&src_dir)?;
 
-    for src_file in &source_files {
-        if fs::metadata(src_file).is_err() {
-            panic!("Source file {} does not exist!", src_file);
-        }
-    }
+    // Create the "src/util.rs" file.
+    fs::write(
+        &src_dir.join("util.rs"),
+        include_str!("templates/util.rs.template"),
+    )?;
 
-    let src_dir = "src";
-    fs::create_dir_all(src_dir)?;
+    // Create the "src/lib.rs" file.
+    fs::write(
+        &src_dir.join("lib.rs"),
+        include_str!("templates/lib.rs.template"),
+    )?;
 
-    for src_file in source_files {
-        let dest_path = format!("{}/{}", src_dir, src_file);
-        fs::rename(src_file, &dest_path)?;
-    }
+    // Create the "Cargo.toml" file.
+    let mut cargo_file = fs::File::create(output_path.join("Cargo.toml"))?;
+    write!(
+        cargo_file,
+        include_str!("templates/Cargo.toml.template"),
+        // In case the user provides a relative path, use the last directory
+        // as the crate name.
+        output_path.file_name().unwrap().to_string_lossy()
+    )?;
 
-    let mut lib_file = fs::File::create(format!("{}/lib.rs", src_dir))?;
-    write!(lib_file, "{}", include_str!("templates/lib.rs.template"))?;
-
-    let cargo_toml = format!(include_str!("templates/Cargo.toml.template"), output_name);
-
-    fs::write("Cargo.toml", cargo_toml)?;
-
-    let readme_contents = r#"
-# Readme
-
-This output was automatically generated by `Thanix` (github.com/The-Nazara-Project/Thanix).
-"#;
-
-    fs::write("README.md", readme_contents)?;
+    // Create the "README.md" file.
+    fs::write(
+        output_path.join("README.md"),
+        include_str!("templates/README.md.template"),
+    )?;
 
     println!("Output successfully repackaged!");
     Ok(())
 }
 
 /// Makes a comment out of a given string.
-fn make_comment(input: String, indent: usize) -> String {
-    return input
-        .split('\n')
-        .map(|x| format!("{}/// {}\n", "\t".repeat(indent), x))
-        .collect::<Vec<_>>()
-        .concat();
-}
-
-fn make_fn_name_from_path(input: &str) -> String {
-    input.replace("/api/", "").replace('/', "_")
-}
-
-/// Replaces reserved keywords in an input string for use in Rust.
-fn fix_keywords(input: &str) -> String {
-    input
-        .replace("type", "typ")
-        .replace("struct", "structure")
-        .replace("fn", "func")
-}
-
-fn pathop_to_string(path: &str, input: &PathOp, method: &str) -> String {
-    // Create a new struct for the query parameters.
-    let fn_struct_params = input
-        .parameters
-        // Filter out only the query inputs.
-        .iter()
-        .filter(|x| x.input == "query")
-        .enumerate()
-        .map(|(s, p)| {
-            format!(
-                "\t{}: Option<{}>{}\n",
-                fix_keywords(&p.name),
-                get_inner_type(p.schema.as_ref().unwrap().clone(), false),
-                if s < &input.parameters.len() - 1 {
-                    ","
-                } else {
-                    ""
-                }
-            )
-        })
-        .collect::<String>();
-    let fn_name = input
-        .operation_id
-        .clone()
-        .unwrap_or(make_fn_name_from_path(&path));
-    let fn_struct_name = fn_name.to_case(Case::Pascal) + "Query";
-    let fn_struct = format!("#[derive(Debug, Serialize, Deserialize, Default)]\npub struct {fn_struct_name} {{\n{fn_struct_params}}}");
-    let comment = make_comment(input.description.clone().unwrap(), 0);
-    let mut path_args = input
-        .parameters
-        // Filter out only the path inputs.
-        .iter()
-        .filter(|x| x.input == "path")
-        .enumerate()
-        .map(|(s, p)| {
-            format!(
-                "{}: {}{}",
-                fix_keywords(&p.name),
-                get_inner_type(p.schema.as_ref().unwrap().clone(), false),
-                if s < &input.parameters.len() - 1 {
-                    ","
-                } else {
-                    ""
-                }
-            )
-        })
-        .collect::<String>();
-    if !path_args.is_empty() {
-        path_args = ", ".to_owned() + &path_args;
+pub fn make_comment(input: Option<String>, indent: usize) -> String {
+    match input {
+        Some(x) => x
+            .split('\n')
+            .map(|x| format!("{}/// {}\n", "\t".repeat(indent), x))
+            .collect::<Vec<_>>()
+            .concat(),
+        None => String::new(),
     }
-    return format!(
-        include_str!("templates/path.template"),
-        fn_struct, comment, fn_name, fn_struct_name, path_args, method, path
-    );
 }
 
-fn get_inner_type(items: Value, append_vec: bool) -> String {
-    // Get inner type of the array.
-    let inner_type = match items.get("$ref") {
-        // Struct type
-        Some(y) => y.as_str().unwrap().replace("#/components/schemas/", ""),
-        // Normal type
-        None => match items.get("type") {
-            Some(y) => match y.as_str().unwrap() {
-                "integer" => match items.get("format") {
-                    Some(x) => match x.as_str().unwrap() {
-                        "int8" => "i8".to_owned(),
-                        "int16" => "i16".to_owned(),
-                        "int32" => "i32".to_owned(),
-                        _ => "i64".to_owned(),
-                    },
-                    None => "i64".to_owned(),
+pub fn type_to_string(ty: &ReferenceOr<Schema>) -> String {
+    match ty {
+        // If the type is a reference, just extract the component name.
+        ReferenceOr::Reference { reference } => reference.replace("#/components/schemas/", ""),
+        ReferenceOr::Item(item) => {
+            let mut base = match &item.schema_kind {
+                SchemaKind::Type(t) => match t {
+                    Type::String(_) => "String".to_owned(),
+                    Type::Number(_) => "f64".to_owned(),
+                    Type::Integer(int) => {
+                        let signed = match int.minimum {
+                            Some(x) => x < 0,
+                            None => false,
+                        };
+                        let int_size = match int.maximum {
+                            Some(x) => {
+                                if signed {
+                                    if x <= i8::MAX.into() {
+                                        "i8"
+                                    } else if x <= i16::MAX.into() {
+                                        "i16"
+                                    } else if x <= i32::MAX.into() {
+                                        "i32"
+                                    } else {
+                                        "i64"
+                                    }
+                                } else {
+                                    if x <= u8::MAX.into() {
+                                        "u8"
+                                    } else if x <= u16::MAX.into() {
+                                        "u16"
+                                    } else if x <= u32::MAX.into() {
+                                        "u32"
+                                    } else {
+                                        "u64"
+                                    }
+                                }
+                            }
+                            None => "i64",
+                        };
+                        return int_size.to_owned();
+                    }
+                    // JSON object, but Rust has no easy way to support this, so just ask for a string.
+                    Type::Object(_) => "String".to_owned(),
+                    Type::Boolean(_) => "bool".to_owned(),
+                    Type::Array(x) => {
+                        let items = x.items.as_ref().unwrap().clone().unbox();
+                        format!("Vec<{}>", type_to_string(&items))
+                    }
                 },
-                "number" => "f64".to_owned(),
-                "string" => match items.get("format") {
-                    Some(x) => match x.as_str().unwrap() {
-                        "uri" => "Url".to_owned(),
-                        _ => "String".to_owned(),
-                    },
-                    None => "String".to_owned(),
-                },
-                "boolean" => "bool".to_owned(),
-                "object" => "String".to_owned(),
-                "array" => get_inner_type(
-                    match items.get("items") {
-                        Some(z) => z.clone(),
-                        None => panic!("array is missing items section!"),
-                    },
-                    true,
-                ),
-                _ => panic!("unhandled type!"),
-            },
-            // We don't know what this is so assume a JSON object.
-            None => "String".to_owned(),
-        },
-    };
-    if append_vec {
-        let fmt = format!("Vec<{inner_type}>");
-        return fmt.clone();
-    }
-    inner_type
-}
-
-/// Executes a closure if the Option contains a Some value.
-fn if_some<F: FnOnce(&T), T>(this: Option<T>, func: F) {
-    if let Some(ref x) = this {
-        func(x);
-    }
-}
-
-/// Generates the Rust bindings from a file.
-pub fn gen(input_path: impl AsRef<std::path::Path>) {
-    // Parse the schema.
-    let input = std::fs::read_to_string(input_path).unwrap();
-    let yaml: Schema = serde_yaml::from_str(&input).unwrap();
-
-    // Generate output folder.
-    _ = std::fs::create_dir("thanix_client");
-
-    // Create and open the output file for structs.
-    let mut types_file = File::create("thanix_client/types.rs").unwrap();
-    types_file
-        .write_all(include_str!("templates/usings.template").as_bytes())
-        .unwrap();
-
-    // For every struct.
-    for (name, comp) in &yaml.components.schemas {
-        // Keep a record of all written fields for a constructor.
-        let mut fields = Vec::new();
-        // Prepend slashes to all lines in the documentation string.
-        let desc = match comp.description.clone() {
-            Some(d) => make_comment(d, 0),
-            None => String::new(),
-        };
-        // Write description.
-        types_file.write_all(desc.as_bytes()).unwrap();
-        // Write name.
-        types_file
-            .write_all(b"#[derive(Debug, Serialize, Deserialize, Default)]\npub struct ")
-            .unwrap();
-        types_file.write_all(name.as_bytes()).unwrap();
-        types_file.write_all(b" {\n").unwrap();
-        // For every struct field.
-        for (prop_name, prop) in &comp.properties {
-            // Get the type of this field from YAML.
-            let yaml_type = match prop.typ.as_ref() {
-                Some(val) => val.as_str(),
-                None => continue,
+                // Very likely a JSON object.
+                _ => "String".to_owned(),
             };
-
-            let mut type_result = match yaml_type {
-                // "string" can mean either a plain or formatted string or an enum declaration.
-                "string" => "String".to_owned(),
-                "integer" => "i64".to_owned(),
-                "number" => "f64".to_owned(),
-                "boolean" => "bool".to_owned(),
-                "array" => get_inner_type(prop.items.as_ref().unwrap().clone(), true),
-                "object" => "serde_json::value::Value".to_owned(),
-                _ => todo!(),
-            };
-
-            // Wrap type in an Option<T> if nullable.
-            if prop.nullable.unwrap_or(false) {
-                type_result = format!("Option<{type_result}>");
+            // If property is nullable, we treat it as an optional argument.
+            if item.schema_data.nullable {
+                base = format!("Option<{}>", base);
             }
-
-            // Escape field names if they are Rust keywords.
-            let name = match prop_name.as_str() {
-                "type" => "r#type",
-                _ => prop_name,
-            };
-
-            // Prepend slashes to all lines in the documentation string.
-            if let Some(d) = prop.description.as_ref() {
-                types_file
-                    .write_all(make_comment(d.clone(), 1).as_bytes())
-                    .unwrap();
-            };
-            // Write the field to file.
-            types_file
-                .write_all(format!("\t pub {}: {},\n", name, type_result).as_bytes())
-                .unwrap();
-            fields.push((name, type_result));
+            base
         }
-        types_file.write_all(b"}\n\n").unwrap();
     }
-
-    // Create and open the output file for paths.
-    let mut paths_file = File::create("thanix_client/paths.rs").unwrap();
-
-    paths_file
-        .write_all(include_str!("templates/usings.template").as_bytes())
-        .unwrap();
-
-    // For every path.
-    for (name, path) in &yaml.paths {
-        if_some(path.get.as_ref(), |op| {
-            paths_file
-                .write_all(pathop_to_string(name, op, "get").as_bytes())
-                .unwrap()
-        });
-        if_some(path.put.as_ref(), |op| {
-            paths_file
-                .write_all(pathop_to_string(name, op, "put").as_bytes())
-                .unwrap()
-        });
-        if_some(path.post.as_ref(), |op| {
-            paths_file
-                .write_all(pathop_to_string(name, op, "post").as_bytes())
-                .unwrap()
-        });
-        if_some(path.patch.as_ref(), |op| {
-            paths_file
-                .write_all(pathop_to_string(name, op, "patch").as_bytes())
-                .unwrap()
-        });
-        if_some(path.delete.as_ref(), |op| {
-            paths_file
-                .write_all(pathop_to_string(name, op, "delete").as_bytes())
-                .unwrap()
-        });
-    }
-    fs::write(
-        "thanix_client/util.rs",
-        include_str!("templates/util.rs.template").as_bytes(),
-    )
-    .unwrap();
-    create_lib_dir("thanix_client").unwrap();
 }

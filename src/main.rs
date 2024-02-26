@@ -1,4 +1,8 @@
 mod bindgen;
+mod pathgen;
+mod structgen;
+
+use std::path::PathBuf;
 
 use clap::Parser;
 
@@ -6,33 +10,25 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about=None)]
 struct Args {
+    #[arg(short, long, default_value = "output")]
+    output: PathBuf,
     /// Path to a YAML schema file.
-    #[arg(short, long)]
-    input_file: Option<String>,
+    input: Option<String>,
 }
 
 fn main() {
     let args: Args = Args::parse();
-
-    let ascii_art = r#"
-    ████████╗██╗  ██╗ █████╗ ███╗   ██╗██╗██╗  ██╗
-    ╚══██╔══╝██║  ██║██╔══██╗████╗  ██║██║╚██╗██╔╝
-       ██║   ███████║███████║██╔██╗ ██║██║ ╚███╔╝
-       ██║   ██╔══██║██╔══██║██║╚██╗██║██║ ██╔██╗
-       ██║   ██║  ██║██║  ██║██║ ╚████║██║██╔╝ ██╗
-       ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝
-                                                  "#;
 
     // Welcome Message
     println!(
         "{} \n(c) The Nazara Project. (github.com/The-Nazara-Project)\n
         Licensed under the terms of the GPL-v3.0-License.\n\
         Check github.com/The-Nazara-Project/Thanix/LICENSE for more info.\n",
-        ascii_art
+        include_str!("templates/ascii_art.template")
     );
 
-    match args.input_file {
-        Some(file) => bindgen::gen(file),
+    match args.input {
+        Some(file) => bindgen::gen(file, args.output),
         None => println!("Error: You need to provide a YAML schema to generate from."),
     }
 }

@@ -1,3 +1,8 @@
 /target
 /output
 /thanix_client
+
+# IDE files
+.vs/
+.vscode/
+.idea/
