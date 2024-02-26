@@ -3,5 +3,5 @@
 use crate::util::ThanixClient;
 use crate::types::*;
 use serde_qs;
-use reqwest::Error;
+use reqwest::{Error, blocking::Response};
 
