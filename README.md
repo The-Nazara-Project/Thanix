@@ -45,13 +45,13 @@ comfortable.
 **Do not forget to pass the required CLI parameters to Thanix when doing this.**
 
 ```bash
-cargo run -- --input-file $PATH_TO_YOUR_YAML
+cargo run -- $PATH_TO_YOUR_YAML --output $PATH_TO_YOUR_OUTPUT
 ```
 
 This may look like this:
 
 ```bash
-cargo run -- --input-file ./api_config.yaml
+cargo run --  ./api_config.yaml --output thanix_client/
 ```
 
 This step will result in your `thanix_client` being generated.
@@ -114,8 +114,10 @@ Zypper should now install Thanix for you.
 After you have installed Thanix in a way you see fit, you use it by passing it **two mandatory parameters** like this:
 
 ```bash
-thanix --input-file $YOUR_API_YAML
+thanix  $YOUR_API_YAML --output thanix_client/
 ```
 
-- The `--input-file` parameter is a path to your `.yaml`-file you want to use as an input. This is usually the API
+- The `$YOUR_API_YAML` parameter is the path to your `.yaml`-file you want to use as an input. This is usually the API
   schema file your want to generate a client for.
+- The `--output` parameter is optional and refers to the path where thanix' output should be put. If omitted, it will
+  create a `output` directory in your current wokring directory.
