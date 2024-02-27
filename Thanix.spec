@@ -58,3 +58,8 @@ install -m 0755 %{_builddir}/%{name}-%{version}/target/release/%{bin_name} %{bui
 %license LICENSE
 %doc README.md
 
+%changelog
+* Tue Feb 27 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.1-0.1
+- Fully functional beta release
+- Rewritten the path and type generation logic
+- Handled API parameters of unspecified type
