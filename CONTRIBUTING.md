@@ -49,7 +49,7 @@ If you wish to fix a vulnerability, please also inform us and stand by for our g
 
 # Disclaimer
 
-By contributing to this project, you agree to surrender your contributio to the Nazara Project and place it
+By contributing to this project, you agree to surrender your contribution to the Nazara Project and place it
 under the terms of the licenses specified in its repositories.
 
 Your contribution will be subject to the same licensing terms as the rest of the project.
@@ -58,4 +58,4 @@ This is a standard practice in open-source projects to ensure that all contribut
 
 It's important for contributors to be aware of this agreement to ensure that their contributions are properly integrated into the project without any legal conflicts.
 
-#### Thank you for your contribution!
+### Thank you for your contribution!
