@@ -173,7 +173,7 @@ pub fn type_to_string(ty: &ReferenceOr<Schema>) -> String {
                 _ => "serde_json::Value".to_owned(),
             };
             // If property is nullable, we treat it as an optional argument.
-            if item.schema_data.nullable {
+            if item.schema_data.nullable && !base.contains("Option<") {
                 base = format!("Option<{}>", base);
             }
             base
