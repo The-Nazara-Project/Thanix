@@ -81,7 +81,7 @@ To install it simply run:
 cargo install thanix
 ```
 
-### Install Cargo as a distribution package (TBA)
+### Install Thanix as a distribution package (TBA)
 
 We are working on building packages for a variety of Linux distributions starting with `openSUSE Tumbleweed`.
 
