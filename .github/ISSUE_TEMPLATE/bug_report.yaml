@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: Christopher Hock and the Nazara Team <byteotter@gmail.com>
+# SPDX-LicenseIdentifier: GPL-3.0-only
+---
+name: Bug Report
+description: Found a bug? Let us know!
+title: "[BUG]"
+labels: ["bug", "pending"]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        **NOTE**: Please only use this form to report _reproducible bugs_ in Thanix.
+        If you have any questions or are looking for assistance,
+        please refer to our [discussion section](https://github.com/orgs/The-Nazara-Project/discussions).
+  - type: input
+    attributes:
+      label: Thanix Version
+      description: >
+        Which version of Thanix does this bug affect?
+      placeholder: master
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Nazara Version
+      description: >
+        Which version of Nazara are you using Thanix' output with (if any).
+      placeholder: master
+  - type: input
+    attributes:
+      label: NetBox Schema Version
+      description: >
+        Which version of NetBox are you running?
+      placeholder: v4.0.0
+  - type: input
+    attributes:
+      label: openAPI Version
+      description: The version of openAPI you are using. (In case you are not using NetBox)
+      placeholder: v3.0
+  - type: dropdown
+    attributes:
+      label: Bug Type 
+      description: >
+        Which module or area of Thanix does this affect?
+      multiple: true
+      options:
+        - YAML Parsing
+        - Type Generation
+        - Path Generation
+        - Dependencies
+        - Performance
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Bug Description
+      description: >
+        Please describe in detail what issue you face.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected Behaviour
+      description: >
+        Please describe what you exepected to happen.
+  - type: textarea
+    attributes:
+      label: Steps to Reproduce
+      description: >
+        Please describe what steps we need to take to reproduce this issue.
+        Please also include any relevant details about your environment (Host system, NetBox Version, etc.)
+    validations:
+      required: true
