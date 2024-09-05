@@ -1,3 +1,5 @@
+//! Generate bindings, parse YAML and create output files.
+
 use crate::pathgen;
 use crate::structgen;
 use openapiv3::Schema;
@@ -11,7 +13,7 @@ use std::{
 };
 
 /// Generate Rust bindings from an OpenAPI schema.
-pub fn gen(input_path: impl AsRef<Path>, output_path: impl AsRef<Path>) {
+pub fn gen(input_path: impl AsRef<Path>, output_path: impl AsRef<Path>, workaround_mode: bool) {
     // Parse the schema.
     let input = fs::read_to_string(input_path).unwrap();
     let api: OpenAPI = serde_yaml::from_str(&input).unwrap();
@@ -32,7 +34,7 @@ pub fn gen(input_path: impl AsRef<Path>, output_path: impl AsRef<Path>) {
             _ => continue,
         };
         // Generate struct and write it to file.
-        if let Some(structure) = structgen::gen(name, s) {
+        if let Some(structure) = structgen::gen(name, s, workaround_mode) {
             types_file.write_all(structure.as_bytes()).unwrap();
         }
     }

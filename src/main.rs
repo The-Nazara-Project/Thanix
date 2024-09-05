@@ -1,6 +1,7 @@
 mod bindgen;
 mod pathgen;
 mod structgen;
+mod util;
 
 use std::path::PathBuf;
 
@@ -14,6 +15,12 @@ struct Args {
     output: PathBuf,
     /// Path to a YAML schema file.
     input: Option<String>,
+    /// Enable Workaround mode.
+    /// Creates opinionated NetBox API client.
+    /// Can help with unsanitary response data crashing deserialization by making API object fields optional, even though
+    /// the YAML might state otherwise.
+    #[arg(short, long, action = clap::ArgAction::SetTrue)]
+    workaround: bool,
 }
 
 fn main() {
@@ -28,7 +35,7 @@ fn main() {
     );
 
     match args.input {
-        Some(file) => bindgen::gen(file, args.output),
+        Some(file) => bindgen::gen(file, args.output, args.workaround),
         None => println!("Error: You need to provide a YAML schema to generate from."),
     }
 }

@@ -121,3 +121,11 @@ thanix  $YOUR_API_YAML --output thanix_client/
   schema file your want to generate a client for.
 - The `--output` parameter is optional and refers to the path where thanix' output should be put. If omitted, it will
   create a `output` directory in your current wokring directory.
+- The `--workaround` flag can be set to allow Thanix to create a **strongly opinionated** version of `thanix_client`. This is
+  primarily used to avoid serialization errors when handling API object responses which we have confirmed to diverge from the
+  values expected according to the schema.
+
+> [!Note]
+> The `--workaround` flag is only useful when creating a client for [`NetBox`](https://netbox.dev). In other cases it might produce 
+> a broken or unsafe API client by weakening response data validation.
+
