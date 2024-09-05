@@ -1,3 +1,5 @@
+//! Generate API request functions.
+
 use crate::bindgen::{self, make_comment};
 use check_keyword::CheckKeyword;
 use convert_case::{Case, Casing};
@@ -240,7 +242,7 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
     result += &fn_response_name;
     result += "::Other(r#response)) }\n\t}\n}\n";
 
-    return result;
+    result
 }
 
 fn make_fn_name_from_path(input: &str) -> String {
