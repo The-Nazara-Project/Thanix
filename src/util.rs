@@ -20,5 +20,5 @@ static UNSANITARY_OBJECTS: &[&str] = &["interface"];
 
 /// Check if a given struct's name contains any entry from the `UNSANITARY_OBJECTS` list.
 pub fn is_unsanitary(name: &str) -> bool {
-    UNSANITARY_OBJECTS.iter().any(|&word| name.contains(word))
+    UNSANITARY_OBJECTS.iter().any(|&word| name.to_lowercase().contains(word))
 }
