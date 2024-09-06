@@ -17,7 +17,7 @@
 
 
 Name:           Thanix
-Version:        0.1.0_beta.7
+Version:        0.1.0_beta.8
 Release:        0.1
 Summary:        Rust to yaml code generator
 # FIXME: Select a correct license from https://github.com/openSUSE/spec-cleaner#spdx-licenses
@@ -59,6 +59,8 @@ install -m 0755 %{_builddir}/%{name}-%{version}/target/release/%{bin_name} %{bui
 %doc README.md
 
 %changelog
+* Fri Sep 06 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.8-0.1
+- Fix critical bug in workflow mode breaking type generation for sanitary structs
 * Fri Sep 06 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.7-0.1
 - Fix the version module not being public in output
 * Fri Sep 06 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.6-0.1

@@ -69,7 +69,9 @@ pub fn gen(name: &str, schema: &Schema, workaround_mode: bool) -> Option<String>
                 && !result.ends_with("\tpub id:")
             {
                 result += &format!("Option<{}>", type_name);
-            }
+            } else {
+				result += &type_name;
+			}
         } else {
             result += &type_name;
         }
