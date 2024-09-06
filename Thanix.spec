@@ -17,7 +17,7 @@
 
 
 Name:           Thanix
-Version:        0.1.0_beta.5
+Version:        0.1.0_beta.6
 Release:        0.1
 Summary:        Rust to yaml code generator
 # FIXME: Select a correct license from https://github.com/openSUSE/spec-cleaner#spdx-licenses
@@ -59,6 +59,10 @@ install -m 0755 %{_builddir}/%{name}-%{version}/target/release/%{bin_name} %{bui
 %doc README.md
 
 %changelog
+* Fri Sep 06 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.6-0.1
+- Generate output with feature to dynamically build a VERSION constant
+* Thu Sep 05 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.5-0.1
+- Add workaround to allow output to handle unsanitary response data
 * Tue Feb 27 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.1-0.1
 - Fully functional beta release
 - Rewritten the path and type generation logic

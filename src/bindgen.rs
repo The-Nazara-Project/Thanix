@@ -94,10 +94,10 @@ fn create_lib_dir(output_path: &Path) -> io::Result<()> {
         output_path.file_name().unwrap().to_string_lossy()
     )?;
 
-	fs::write(
-		output_path.join("build.rs"),
-		include_str!("templates/build.rs.template"),
-	)?;
+    fs::write(
+        output_path.join("build.rs"),
+        include_str!("templates/build.rs.template"),
+    )?;
 
     // Create the "README.md" file.
     fs::write(
