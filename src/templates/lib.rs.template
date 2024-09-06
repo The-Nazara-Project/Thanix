@@ -7,3 +7,4 @@ extern crate reqwest;
 pub mod util;
 pub mod paths;
 pub mod types;
+pub mod version;
