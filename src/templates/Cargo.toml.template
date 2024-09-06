@@ -3,9 +3,13 @@ name = "{}"
 version = "0.1.0"
 authors = ["Your Name"]
 edition = "2021"
+build = "build.rs"
 
 [lib]
 path = "src/lib.rs"
+
+[build-dependencies]
+toml = "0.8.19"
 
 [dependencies]
 serde = {{ version = "1.0.195", features = ["derive"] }}
