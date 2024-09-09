@@ -64,14 +64,16 @@ pub fn gen(name: &str, schema: &Schema, workaround_mode: bool) -> Option<String>
         // Turn all fields in a Response struct (except te id) into an Option to prevent unsanitary
         // response data from crashing serialization.
         if workaround_mode {
-            if is_unsanitary(name)
+            if prop_name == "id" {
+                result += &type_name;
+            } else if is_unsanitary(name)
                 && !type_name.contains("Option<")
                 && !result.ends_with("\tpub id:")
             {
                 result += &format!("Option<{}>", type_name);
             } else {
-				result += &type_name;
-			}
+                result += &type_name;
+            }
         } else {
             result += &type_name;
         }
