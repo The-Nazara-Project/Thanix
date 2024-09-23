@@ -17,7 +17,7 @@
 
 
 Name:           Thanix
-Version:        0.1.0_beta.10
+Version:        0.1.0_beta.11
 Release:        0.1
 Summary:        Rust to yaml code generator
 # FIXME: Select a correct license from https://github.com/openSUSE/spec-cleaner#spdx-licenses
