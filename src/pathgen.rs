@@ -66,7 +66,7 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
                 };
                 // Format as a struct field.
                 fn_query_params.push(format!(
-                    "{}\t{}: Option<{}>,\n",
+                    "{}\tpub {}: Option<{}>,\n",
                     make_comment(parameter_data.description, 1),
                     parameter_data.name.into_safe(),
                     bindgen::type_to_string(query_param_type)
