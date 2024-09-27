@@ -66,7 +66,7 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
                 };
                 // Format as a struct field.
                 fn_query_params.push(format!(
-                    "{}\tpub {}: Option<{}>,\n",
+                    "{}\t{}: Option<{}>,\n",
                     make_comment(parameter_data.description, 1),
                     parameter_data.name.into_safe(),
                     bindgen::type_to_string(query_param_type)
@@ -193,7 +193,13 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
     result += ", Error>";
 
     // Build the function body.
-    result += " {\n\tlet r#response = state.client.";
+    if need_query {
+        result += " {\n\tlet qstring = serde_qs::to_string(&query).unwrap();";
+        result += "\n\tlet qstring_clean = remove_square_braces(&qstring);";
+        result += "\n\tlet r#response = state.client."
+    } else {
+        result += " {\n\tlet r#response = state.client.";
+    }
     result += op_type;
     result += "(format!(\"{}";
     result += name;
@@ -202,7 +208,7 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
     }
     result += "\", state.base_url";
     if need_query {
-        result += ", serde_qs::to_string(&query).unwrap()";
+        result += ", qstring_clean";
     }
     result += "))\n";
 
@@ -242,7 +248,7 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
     result += &fn_response_name;
     result += "::Other(r#response)) }\n\t}\n}\n";
 
-    result
+    return result;
 }
 
 fn make_fn_name_from_path(input: &str) -> String {

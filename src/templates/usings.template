@@ -1,6 +1,6 @@
 #![allow(warnings)]
 
-use crate::util::ThanixClient;
+use crate::util::{ThanixClient, remove_square_braces};
 use crate::types::*;
 use serde_qs;
 use reqwest::{Error, blocking::Response};
