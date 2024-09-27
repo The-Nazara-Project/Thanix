@@ -17,7 +17,7 @@
 
 
 Name:           Thanix
-Version:        0.1.0_beta.11
+Version:        0.1.0_beta.12
 Release:        0.1
 Summary:        Rust to yaml code generator
 # FIXME: Select a correct license from https://github.com/openSUSE/spec-cleaner#spdx-licenses
@@ -59,6 +59,9 @@ install -m 0755 %{_builddir}/%{name}-%{version}/target/release/%{bin_name} %{bui
 %doc README.md
 
 %changelog
+* Fri Sep 27 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.12-0.1
+- Scrub index arrays from serde_qs::to_string function from query strings
+- Fix query struct fields not being public
 * Fri Sep 06 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.9-0.1
 - Fix type recognition logic
 * Fri Sep 06 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.8-0.1
