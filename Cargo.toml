@@ -1,6 +1,6 @@
 [package]
 name = "thanix"
-authors = ["Christopher Hock <christopher-hock@protonmail.com>"]
+authors = ["Tiara Hock <tiara.dev@proton.me>"]
 version = "0.1.0-beta.12"
 publish = true
 edition = "2021"
