@@ -59,20 +59,20 @@ install -m 0755 %{_builddir}/%{name}-%{version}/target/release/%{bin_name} %{bui
 %doc README.md
 
 %changelog
-* Fri Sep 27 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.12-0.1
+* Fri Sep 27 2024 Tiara Hock <tiara.dev@proton.me> - 0.1.0_beta.12-0.1
 - Scrub index arrays from serde_qs::to_string function from query strings
 - Fix query struct fields not being public
-* Fri Sep 06 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.9-0.1
+* Fri Sep 06 2024 Tiara Hock <tiara.dev@proton.me> - 0.1.0_beta.9-0.1
 - Fix type recognition logic
-* Fri Sep 06 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.8-0.1
+* Fri Sep 06 2024 Tiara Hock <tiara.dev@proton.me> - 0.1.0_beta.8-0.1
 - Fix critical bug in workflow mode breaking type generation for sanitary structs
-* Fri Sep 06 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.7-0.1
+* Fri Sep 06 2024 Tiara Hock <tiara.dev@proton.me> - 0.1.0_beta.7-0.1
 - Fix the version module not being public in output
-* Fri Sep 06 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.6-0.1
+* Fri Sep 06 2024 Tiara Hock <tiara.dev@proton.me> - 0.1.0_beta.6-0.1
 - Generate output with feature to dynamically build a VERSION constant
-* Thu Sep 05 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.5-0.1
+* Thu Sep 05 2024 Tiara Hock <tiara.dev@proton.me> - 0.1.0_beta.5-0.1
 - Add workaround to allow output to handle unsanitary response data
-* Tue Feb 27 2024 Christopher Hock <christopher-hock@protonmail.com> - 0.1.0_beta.1-0.1
+* Tue Feb 27 2024 Tiara Hock <tiara.dev@proton.me> - 0.1.0_beta.1-0.1
 - Fully functional beta release
 - Rewritten the path and type generation logic
 - Handled API parameters of unspecified type
