@@ -5,7 +5,7 @@ use check_keyword::CheckKeyword;
 use convert_case::{Case, Casing};
 use openapiv3::{Operation, Parameter, ParameterSchemaOrContent, PathItem, ReferenceOr};
 
-pub fn gen(name: &str, path_item: &PathItem) -> Option<String> {
+pub fn generate(name: &str, path_item: &PathItem) -> Option<String> {
     let mut result = String::new();
 
     if let Some(op) = &path_item.get {

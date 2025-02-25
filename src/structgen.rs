@@ -27,7 +27,7 @@ use openapiv3::{ReferenceOr, Schema, SchemaKind, Type};
 /// # Returns
 ///
 /// * `Option<String>` - The string represnetation of the given struct.
-pub fn gen(name: &str, schema: &Schema, workaround_mode: bool) -> Option<String> {
+pub fn generate(name: &str, schema: &Schema, workaround_mode: bool) -> Option<String> {
     let typ = match &schema.schema_kind {
         SchemaKind::Type(x) => x,
         _ => return None,

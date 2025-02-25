@@ -35,7 +35,7 @@ fn main() {
     );
 
     match args.input {
-        Some(file) => bindgen::gen(file, args.output, args.workaround),
+        Some(file) => bindgen::generate(file, args.output, args.workaround),
         None => println!("Error: You need to provide a YAML schema to generate from."),
     }
 }
