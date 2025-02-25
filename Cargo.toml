@@ -1,9 +1,9 @@
 [package]
 name = "thanix"
 authors = ["Tiara Hock <tiara.dev@proton.me>"]
-version = "0.1.0-beta.12"
+version = "0.1.0-beta.13"
 publish = true
-edition = "2021"
+edition = "2024"
 description = "A yaml-to-rust code generator for generating Rust code from yaml config files e.g. as found in openAPI."
 readme = "README.md"
 repository = "https://github.com/The-Nazara-Project/Thanix"
