@@ -354,6 +354,7 @@ dependencies = [
  "check_keyword",
  "clap",
  "convert_case",
+ "indexmap",
  "openapiv3",
  "serde",
  "serde_yaml",

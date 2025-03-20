@@ -83,3 +83,23 @@ pub fn generate(name: &str, schema: &Schema, workaround_mode: bool) -> Option<St
 
     Some(result)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use openapiv3::{Schema, SchemaKind, StringType, Type};
+
+    #[test]
+    fn test_generate_with_non_object_schema() {
+        let schema = Schema {
+            schema_data: Default::default(),
+            schema_kind: SchemaKind::Type(Type::String(StringType {
+                ..Default::default()
+            })), // Not an object
+        };
+        let result = generate("InvalidStruct", &schema, false);
+        assert_eq!(result, None);
+    }
+
+    // TODO: Expand these tests.
+}
