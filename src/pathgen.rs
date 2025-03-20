@@ -254,3 +254,69 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
 fn make_fn_name_from_path(input: &str) -> String {
     input.replace("/api/", "").replace('/', "_")
 }
+
+#[cfg(test)]
+mod tests {
+    use openapiv3::{Operation, PathItem};
+
+    use super::*;
+
+    #[test]
+    fn test_generate_no_op() {
+        let path_item = PathItem::default();
+        let result = generate("/test", &path_item);
+        assert_eq!(result, Some(String::new()));
+    }
+
+    #[test]
+    fn test_generate_multi_op() {
+        let mut path_item = PathItem::default();
+        path_item.get = Some(Operation::default());
+        path_item.post = Some(Operation::default());
+
+        let result = generate("/test", &path_item);
+        assert!(result.is_some());
+        let output = result.unwrap();
+        assert!(output.contains("get"));
+        assert!(output.contains("post"));
+    }
+
+    #[test]
+    fn test_generate_all_op() {
+        let mut path_item = PathItem::default();
+        path_item.get = Some(Operation::default());
+        path_item.put = Some(Operation::default());
+        path_item.post = Some(Operation::default());
+        path_item.delete = Some(Operation::default());
+        path_item.options = Some(Operation::default());
+        path_item.head = Some(Operation::default());
+        path_item.patch = Some(Operation::default());
+        path_item.trace = Some(Operation::default());
+
+        let result = generate("/test", &path_item);
+        assert!(result.is_some());
+        let output = result.unwrap();
+        assert!(output.contains("get"));
+        assert!(output.contains("put"));
+        assert!(output.contains("post"));
+        assert!(output.contains("delete"));
+        assert!(output.contains("options"));
+        assert!(output.contains("head"));
+        assert!(output.contains("patch"));
+        assert!(output.contains("trace"));
+    }
+
+    #[test]
+    fn test_gen_fn_basic() {
+        let operation = Operation::default();
+        let result = gen_fn("/test", "get", &operation);
+        assert!(result.contains("pub fn"));
+        assert!(result.contains("get"));
+    }
+
+    #[test]
+    fn test_make_fn_name_from_path() {
+        let result = make_fn_name_from_path("/api/user/profile");
+        assert_eq!(result, "user_profile");
+    }
+}

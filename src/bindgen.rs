@@ -191,3 +191,91 @@ pub fn type_to_string(ty: &ReferenceOr<Schema>) -> String {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use openapiv3::{IntegerType, StringType, Type};
+    use tempfile::TempDir;
+
+    use super::*;
+
+    #[test]
+    fn test_make_comment() {
+        let input = Some("Test comment\nwith multiple lines.".to_string());
+        let result = make_comment(input, 1);
+        assert_eq!(result, "\t/// Test comment\n\t/// with multiple lines.\n");
+    }
+
+    #[test]
+    fn test_make_comment_empty() {
+        let input = None;
+        let result = make_comment(input, 1);
+        assert_eq!(result, "");
+    }
+
+    #[test]
+    fn test_type_to_string() {
+        let schema = ReferenceOr::Item(Schema {
+            schema_data: Default::default(),
+            schema_kind: SchemaKind::Type(Type::String(StringType {
+                ..Default::default()
+            })),
+        });
+        assert_eq!(type_to_string(&schema), "String");
+    }
+
+    #[test]
+    fn test_type_to_string_integer() {
+        let schema = ReferenceOr::Item(Schema {
+            schema_data: Default::default(),
+            schema_kind: SchemaKind::Type(Type::Integer(IntegerType {
+                minimum: Some(0),
+                maximum: None,
+                ..Default::default()
+            })),
+        });
+        assert_eq!(type_to_string(&schema), "i64");
+    }
+
+    #[test]
+    fn test_type_to_string_reference() {
+        let schema = ReferenceOr::Reference {
+            reference: "#/components/schemas/User".to_string(),
+        };
+        assert_eq!(type_to_string(&schema), "User");
+    }
+
+    #[test]
+    fn test_create_lib_dir() -> io::Result<()> {
+        let temp_dir = TempDir::new()?;
+        let output_path = temp_dir.path();
+
+        create_lib_dir(output_path)?;
+
+        assert!(output_path.join("src").exists());
+        assert!(output_path.join("src/util.rs").exists());
+        assert!(output_path.join("src/lib.rs").exists());
+        assert!(output_path.join("Cargo.toml").exists());
+        assert!(output_path.join("build.rs").exists());
+        assert!(output_path.join("README.md").exists());
+
+        let cargo_content = fs::read_to_string(output_path.join("Cargo.toml"))?;
+        assert!(cargo_content.contains("[package]"));
+        assert!(cargo_content.contains("edition = \"2024\""));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_create_lib_dir_custom_name() -> io::Result<()> {
+        let temp_dir = TempDir::new()?;
+        let output_path = temp_dir.path().join("custom-name");
+
+        create_lib_dir(&output_path)?;
+
+        let cargo_content = fs::read_to_string(output_path.join("Cargo.toml"))?;
+        assert!(cargo_content.contains("name = \"custom-name\""));
+
+        Ok(())
+    }
+}

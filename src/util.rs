@@ -33,35 +33,35 @@ pub fn is_unsanitary(name: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
+    use super::*;
 
-	#[test]
-	fn test_exact_match() {
-		assert!(is_unsanitary("interface"));
-	}
+    #[test]
+    fn test_exact_match() {
+        assert!(is_unsanitary("interface"));
+    }
 
-	#[test]
-	fn test_case_insensitive() {
-		assert!(is_unsanitary("INTERFACE"));
-		assert!(is_unsanitary("interface"));
-	}
+    #[test]
+    fn test_case_insensitive() {
+        assert!(is_unsanitary("INTERFACE"));
+        assert!(is_unsanitary("interface"));
+    }
 
-	#[test]
-	fn test_substring_match() {
-		assert!(is_unsanitary("interface_type"));
-		assert!(is_unsanitary("interface_name"));
-	}
+    #[test]
+    fn test_substring_match() {
+        assert!(is_unsanitary("interface_type"));
+        assert!(is_unsanitary("interface_name"));
+    }
 
-	#[test]
-	fn test_no_match() {
-		assert!(!is_unsanitary("device"));
-		assert!(!is_unsanitary(""));
-		assert!(!is_unsanitary("other"));
-	}
+    #[test]
+    fn test_no_match() {
+        assert!(!is_unsanitary("device"));
+        assert!(!is_unsanitary(""));
+        assert!(!is_unsanitary("other"));
+    }
 
-	#[test]
-	fn test_whitespace() {
-		assert!(is_unsanitary(" interface "));
-		assert!(is_unsanitary("\tinterface\n"));
-	}
+    #[test]
+    fn test_whitespace() {
+        assert!(is_unsanitary(" interface "));
+        assert!(is_unsanitary("\tinterface\n"));
+    }
 }
