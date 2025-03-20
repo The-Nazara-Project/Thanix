@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
-/// The argument that Thanix expects to get given via the cli.
+/// The arguments that Thanix expects to get given via the cli.
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about=None)]
 struct Args {
