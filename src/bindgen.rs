@@ -40,6 +40,8 @@ pub fn generate(
         // Generate struct and write it to file.
         if let Some(structure) = structgen::generate(name, s, workaround_mode) {
             types_file.write_all(structure.as_bytes()).unwrap();
+        } else {
+            eprintln!("Structure {} couldn't be generated", name);
         }
     }
 
