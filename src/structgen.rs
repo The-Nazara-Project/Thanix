@@ -38,7 +38,7 @@ pub fn generate(name: &str, schema: &Schema, workaround_mode: bool) -> Option<St
         "#[derive(Serialize, Deserialize, Debug, Default, Clone)]\npub struct ".to_owned();
     result += name;
 
-    // If not an ObjectType, return None.
+    // If not an ObjectType or an Array of objects, return None.
     match &typ {
         Type::Object(obj) => {
             result += " {\n";
