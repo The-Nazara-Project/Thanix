@@ -59,16 +59,12 @@ pub fn generate(name: &str, schema: &Schema, workaround_mode: bool) -> Option<St
                 result += &format!("pub {}", &prop_name.clone().into_safe());
                 result += ": ";
 
-                // HACK
-                // Turn all fields in a Response struct (except te id) into an Option to prevent unsanitary
-                // response data from crashing serialization.
-                if workaround_mode {
+                // The NetBox schema may be incorrect and we can't rely on what we get as a response.
+                // Therefore, we must make every response field nullable, even if it's technically not correct.
+                if workaround_mode && !name.ends_with("Request") {
                     if prop_name == "id" {
                         result += &type_name;
-                    } else if is_unsanitary(name)
-                        && !type_name.contains("Option<")
-                        && !result.ends_with("\tpub id:")
-                    {
+                    } else if !type_name.contains("Option<") && !result.ends_with("\tpub id:") {
                         result += &format!("Option<{}>", type_name);
                     } else {
                         result += &type_name;
