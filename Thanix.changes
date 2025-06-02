@@ -1,4 +1,10 @@
 ------------------------------------------------------------------
+Mon Jun 02 02:45:00 UTC 2025 - Marvin Friedrich <contact@marvinf.com>
+
+- 0.1.0_beta.16
+  * Add debug feature to generated thanix_client crate
+
+------------------------------------------------------------------
 Wed May 28 10:45:00 UTC 2025 - Marvin Friedrich <contact@marvinf.com>
 
 - 0.1.0_beta.15
