@@ -17,6 +17,7 @@ pub fn generate(
     input_path: impl AsRef<Path>,
     output_path: impl AsRef<Path>,
     workaround_mode: bool,
+    debug: bool,
 ) {
     // Parse the schema.
     let input = fs::read_to_string(input_path).unwrap();
@@ -56,7 +57,7 @@ pub fn generate(
             _ => continue,
         };
         // Generate paths and write to file.
-        if let Some(paths) = pathgen::generate(name, p) {
+        if let Some(paths) = pathgen::generate(name, p, debug) {
             paths_file.write_all(paths.as_bytes()).unwrap();
         }
     }

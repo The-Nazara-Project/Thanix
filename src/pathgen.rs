@@ -5,38 +5,38 @@ use check_keyword::CheckKeyword;
 use convert_case::{Case, Casing};
 use openapiv3::{Operation, Parameter, ParameterSchemaOrContent, PathItem, ReferenceOr};
 
-pub fn generate(name: &str, path_item: &PathItem) -> Option<String> {
+pub fn generate(name: &str, path_item: &PathItem, debug: bool) -> Option<String> {
     let mut result = String::new();
 
     if let Some(op) = &path_item.get {
-        result += gen_fn(name, "get", op).as_str();
+        result += gen_fn(name, "get", op, debug).as_str();
     }
     if let Some(op) = &path_item.put {
-        result += gen_fn(name, "put", op).as_str();
+        result += gen_fn(name, "put", op, debug).as_str();
     }
     if let Some(op) = &path_item.post {
-        result += gen_fn(name, "post", op).as_str();
+        result += gen_fn(name, "post", op, debug).as_str();
     }
     if let Some(op) = &path_item.delete {
-        result += gen_fn(name, "delete", op).as_str();
+        result += gen_fn(name, "delete", op, debug).as_str();
     }
     if let Some(op) = &path_item.options {
-        result += gen_fn(name, "options", op).as_str();
+        result += gen_fn(name, "options", op, debug).as_str();
     }
     if let Some(op) = &path_item.head {
-        result += gen_fn(name, "head", op).as_str();
+        result += gen_fn(name, "head", op, debug).as_str();
     }
     if let Some(op) = &path_item.patch {
-        result += gen_fn(name, "patch", op).as_str();
+        result += gen_fn(name, "patch", op, debug).as_str();
     }
     if let Some(op) = &path_item.trace {
-        result += gen_fn(name, "trace", op).as_str();
+        result += gen_fn(name, "trace", op, debug).as_str();
     }
 
     Some(result)
 }
 
-fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
+fn gen_fn(name: &str, op_type: &str, op: &Operation, debug: bool) -> String {
     let mut result = String::new();
 
     // Build function name.
@@ -190,19 +190,19 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
     // Build the response type.
     result += "Result<";
     result += &fn_response_name;
-    result += ", Error>";
+    result += ", Error> {\n";
 
     // Build the function body.
     if need_query {
-        result += " {\n\tlet qstring = serde_qs::to_string(&query).unwrap();";
-        result += "\n\tlet qstring_clean = remove_square_braces(&qstring);";
-        result += "\n\tlet r#response = state.client."
-    } else {
-        result += " {\n\tlet r#response = state.client.";
+        result += "\tlet qstring = serde_qs::to_string(&query).unwrap();\n";
+        result += "\tlet qstring_clean = remove_square_braces(&qstring);\n";
     }
+
+    result += "\n\tlet mut r#request = state.client.";
     result += op_type;
     result += "(format!(\"{}";
     result += name;
+
     if need_query {
         result += "?{}";
     }
@@ -213,16 +213,27 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
     result += "))\n";
 
     // Auth header.
-    result += "\t\t.header(\"Authorization\", format!(\"Token {}\", state.authentication_token))\n";
+    result +=
+        "\t\t.header(\"Authorization\", format!(\"Token {}\", state.authentication_token));\n";
 
     // JSON body.
     if let Some(_) = &fn_request_type {
-        result += "\t\t.json(&body)\n";
+        result += "\tr#request = r#request.json(&body);\n";
     }
     fn_header_params
         .iter()
         .for_each(|(name, _)| result += &format!("\n.header(\"{}\", header_{})", &name, &name));
-    result += "\t\t.send()?;\n";
+
+    if debug {
+        result += "\teprint!(\"{:?} = \", &r#request);\n";
+    }
+
+    result += "\tlet r#response = r#request.send()?;\n";
+
+    if debug {
+        result += "\teprintln!(\"= {:?}\", &r#response);\n";
+    }
+
     result += "\tmatch r#response.status().as_u16() {\n";
 
     // Match response code.
@@ -264,7 +275,7 @@ mod tests {
     #[test]
     fn test_generate_no_op() {
         let path_item = PathItem::default();
-        let result = generate("/test", &path_item);
+        let result = generate("/test", &path_item, false);
         assert_eq!(result, Some(String::new()));
     }
 
@@ -274,7 +285,7 @@ mod tests {
         path_item.get = Some(Operation::default());
         path_item.post = Some(Operation::default());
 
-        let result = generate("/test", &path_item);
+        let result = generate("/test", &path_item, false);
         assert!(result.is_some());
         let output = result.unwrap();
         assert!(output.contains("get"));
@@ -293,7 +304,7 @@ mod tests {
         path_item.patch = Some(Operation::default());
         path_item.trace = Some(Operation::default());
 
-        let result = generate("/test", &path_item);
+        let result = generate("/test", &path_item, false);
         assert!(result.is_some());
         let output = result.unwrap();
         assert!(output.contains("get"));
@@ -309,7 +320,7 @@ mod tests {
     #[test]
     fn test_gen_fn_basic() {
         let operation = Operation::default();
-        let result = gen_fn("/test", "get", &operation);
+        let result = gen_fn("/test", "get", &operation, false);
         assert!(result.contains("pub fn"));
         assert!(result.contains("get"));
     }
