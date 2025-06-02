@@ -225,12 +225,14 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation, debug: bool) -> String {
         .for_each(|(name, _)| result += &format!("\n.header(\"{}\", header_{})", &name, &name));
 
     if debug {
+        result += "\t#[cfg(debug_assertions)]\n";
         result += "\teprint!(\"{:?} = \", &r#request);\n";
     }
 
     result += "\tlet r#response = r#request.send()?;\n";
 
     if debug {
+        result += "\t#[cfg(debug_assertions)]\n";
         result += "\teprintln!(\"= {:?}\", &r#response);\n";
     }
 
