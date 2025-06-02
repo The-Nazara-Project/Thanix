@@ -1,6 +1,6 @@
 //! Generate structs from API objects.
 
-use crate::{bindgen, util::is_unsanitary};
+use crate::bindgen;
 use check_keyword::CheckKeyword;
 use openapiv3::{ReferenceOr, Schema, SchemaKind, Type};
 

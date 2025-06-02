@@ -190,19 +190,19 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
     // Build the response type.
     result += "Result<";
     result += &fn_response_name;
-    result += ", Error>";
+    result += ", Error> {\n";
 
     // Build the function body.
     if need_query {
-        result += " {\n\tlet qstring = serde_qs::to_string(&query).unwrap();";
-        result += "\n\tlet qstring_clean = remove_square_braces(&qstring);";
-        result += "\n\tlet r#response = state.client."
-    } else {
-        result += " {\n\tlet r#response = state.client.";
+        result += "\tlet qstring = serde_qs::to_string(&query).unwrap();\n";
+        result += "\tlet qstring_clean = remove_square_braces(&qstring);\n";
     }
+
+    result += "\n\tlet mut r#request = state.client.";
     result += op_type;
     result += "(format!(\"{}";
     result += name;
+
     if need_query {
         result += "?{}";
     }
@@ -213,16 +213,25 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
     result += "))\n";
 
     // Auth header.
-    result += "\t\t.header(\"Authorization\", format!(\"Token {}\", state.authentication_token))\n";
+    result +=
+        "\t\t.header(\"Authorization\", format!(\"Token {}\", state.authentication_token));\n";
 
     // JSON body.
     if let Some(_) = &fn_request_type {
-        result += "\t\t.json(&body)\n";
+        result += "\tr#request = r#request.json(&body);\n";
     }
     fn_header_params
         .iter()
         .for_each(|(name, _)| result += &format!("\n.header(\"{}\", header_{})", &name, &name));
-    result += "\t\t.send()?;\n";
+
+    result += "\t#[cfg(feature = \"debug_messages\")]\n";
+    result += "\teprint!(\"{:?} = \", &r#request);\n";
+
+    result += "\tlet r#response = r#request.send()?;\n";
+
+    result += "\t#[cfg(feature = \"debug_messages\")]\n";
+    result += "\teprintln!(\"= {:?}\", &r#response);\n";
+
     result += "\tmatch r#response.status().as_u16() {\n";
 
     // Match response code.
