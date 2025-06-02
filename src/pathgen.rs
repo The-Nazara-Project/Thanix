@@ -5,38 +5,38 @@ use check_keyword::CheckKeyword;
 use convert_case::{Case, Casing};
 use openapiv3::{Operation, Parameter, ParameterSchemaOrContent, PathItem, ReferenceOr};
 
-pub fn generate(name: &str, path_item: &PathItem, debug: bool) -> Option<String> {
+pub fn generate(name: &str, path_item: &PathItem) -> Option<String> {
     let mut result = String::new();
 
     if let Some(op) = &path_item.get {
-        result += gen_fn(name, "get", op, debug).as_str();
+        result += gen_fn(name, "get", op).as_str();
     }
     if let Some(op) = &path_item.put {
-        result += gen_fn(name, "put", op, debug).as_str();
+        result += gen_fn(name, "put", op).as_str();
     }
     if let Some(op) = &path_item.post {
-        result += gen_fn(name, "post", op, debug).as_str();
+        result += gen_fn(name, "post", op).as_str();
     }
     if let Some(op) = &path_item.delete {
-        result += gen_fn(name, "delete", op, debug).as_str();
+        result += gen_fn(name, "delete", op).as_str();
     }
     if let Some(op) = &path_item.options {
-        result += gen_fn(name, "options", op, debug).as_str();
+        result += gen_fn(name, "options", op).as_str();
     }
     if let Some(op) = &path_item.head {
-        result += gen_fn(name, "head", op, debug).as_str();
+        result += gen_fn(name, "head", op).as_str();
     }
     if let Some(op) = &path_item.patch {
-        result += gen_fn(name, "patch", op, debug).as_str();
+        result += gen_fn(name, "patch", op).as_str();
     }
     if let Some(op) = &path_item.trace {
-        result += gen_fn(name, "trace", op, debug).as_str();
+        result += gen_fn(name, "trace", op).as_str();
     }
 
     Some(result)
 }
 
-fn gen_fn(name: &str, op_type: &str, op: &Operation, debug: bool) -> String {
+fn gen_fn(name: &str, op_type: &str, op: &Operation) -> String {
     let mut result = String::new();
 
     // Build function name.
@@ -224,17 +224,13 @@ fn gen_fn(name: &str, op_type: &str, op: &Operation, debug: bool) -> String {
         .iter()
         .for_each(|(name, _)| result += &format!("\n.header(\"{}\", header_{})", &name, &name));
 
-    if debug {
-        result += "\t#[cfg(debug_assertions)]\n";
-        result += "\teprint!(\"{:?} = \", &r#request);\n";
-    }
+    result += "\t#[cfg(feature = \"debug_messages\")]\n";
+    result += "\teprint!(\"{:?} = \", &r#request);\n";
 
     result += "\tlet r#response = r#request.send()?;\n";
 
-    if debug {
-        result += "\t#[cfg(debug_assertions)]\n";
-        result += "\teprintln!(\"= {:?}\", &r#response);\n";
-    }
+    result += "\t#[cfg(feature = \"debug_messages\")]\n";
+    result += "\teprintln!(\"= {:?}\", &r#response);\n";
 
     result += "\tmatch r#response.status().as_u16() {\n";
 
@@ -277,7 +273,7 @@ mod tests {
     #[test]
     fn test_generate_no_op() {
         let path_item = PathItem::default();
-        let result = generate("/test", &path_item, false);
+        let result = generate("/test", &path_item);
         assert_eq!(result, Some(String::new()));
     }
 
@@ -287,7 +283,7 @@ mod tests {
         path_item.get = Some(Operation::default());
         path_item.post = Some(Operation::default());
 
-        let result = generate("/test", &path_item, false);
+        let result = generate("/test", &path_item);
         assert!(result.is_some());
         let output = result.unwrap();
         assert!(output.contains("get"));
@@ -306,7 +302,7 @@ mod tests {
         path_item.patch = Some(Operation::default());
         path_item.trace = Some(Operation::default());
 
-        let result = generate("/test", &path_item, false);
+        let result = generate("/test", &path_item);
         assert!(result.is_some());
         let output = result.unwrap();
         assert!(output.contains("get"));
@@ -322,7 +318,7 @@ mod tests {
     #[test]
     fn test_gen_fn_basic() {
         let operation = Operation::default();
-        let result = gen_fn("/test", "get", &operation, false);
+        let result = gen_fn("/test", "get", &operation);
         assert!(result.contains("pub fn"));
         assert!(result.contains("get"));
     }

@@ -21,10 +21,6 @@ struct Args {
     /// the YAML might state otherwise.
     #[arg(short, long, action = clap::ArgAction::SetTrue)]
     workaround: bool,
-    /// Enable debug mode.
-    /// In debug mode, generated pathgens will log all request URLs and bodies.
-    #[arg(short, long, action = clap::ArgAction::SetTrue)]
-    debug: bool,
 }
 
 fn main() {
@@ -39,7 +35,7 @@ fn main() {
     );
 
     match args.input {
-        Some(file) => bindgen::generate(file, args.output, args.workaround, args.debug),
+        Some(file) => bindgen::generate(file, args.output, args.workaround),
         None => println!("Error: You need to provide a YAML schema to generate from."),
     }
 }
