@@ -1,4 +1,10 @@
 ------------------------------------------------------------------
+Mon Jun 03 13:45:00 UTC 2025 - Marvin Friedrich <contact@marvinf.com>
+
+- 0.1.0_beta.17
+  * Fix generation of PATCH structs
+
+------------------------------------------------------------------
 Mon Jun 02 02:45:00 UTC 2025 - Marvin Friedrich <contact@marvinf.com>
 
 - 0.1.0_beta.16

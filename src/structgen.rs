@@ -56,22 +56,31 @@ pub fn generate(name: &str, schema: &Schema, workaround_mode: bool) -> Option<St
                     }
                 }
                 result += "\t";
-                result += &format!("pub {}", &prop_name.clone().into_safe());
+
+                // Patch requests need to accept partial data.
+                if name.starts_with("Patched") {
+                    result += "#[serde(skip_serializing_if = \"Option::is_none\")]\n\t";
+                }
+
+                result += "pub ";
+                result += &prop_name.clone().into_safe();
                 result += ": ";
 
                 // The NetBox schema may be incorrect and we can't rely on what we get as a response.
                 // Therefore, we must make every response field nullable, even if it's technically not correct.
-                if workaround_mode && !name.ends_with("Request") {
-                    if prop_name == "id" {
-                        result += &type_name;
-                    } else if !type_name.contains("Option<") && !result.ends_with("\tpub id:") {
-                        result += &format!("Option<{}>", type_name);
-                    } else {
-                        result += &type_name;
-                    }
+                let typ = if name.starts_with("Patched") {
+                    format!("Option<{}>", type_name)
+                } else if workaround_mode
+                    && !name.ends_with("Request")
+                    && !type_name.contains("Option")
+                    && prop_name != "id"
+                {
+                    format!("Option<{}>", type_name)
                 } else {
-                    result += &type_name;
-                }
+                    type_name
+                };
+
+                result += &typ;
                 result += ",\n";
             }
 
