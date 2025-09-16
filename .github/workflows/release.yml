@@ -27,9 +27,15 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-
+      
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+        run: |
+          if [ "${{ matrix.os }}" = "macos-latest" ]; then
+            cargo build --release
+          else
+            cargo build --release --target ${{ matrix.target }}
+          fi
+
 
       - name: Package binary
         run: |
