@@ -17,8 +17,8 @@ found as openAPI schemas.
 
 ## Installation
 
-Be aware that Thanix currently is only developed on and for Linux distributions.<br>
-Support for other operating systems may be available in the future, but currently though it is not guaranteed to work.
+> [!Note]
+> Thanix is primary developed for Linux distributions. Windows and MacOS support are provided "as-is".
 
 ### Building from source
 
@@ -81,7 +81,7 @@ To install it simply run:
 cargo install thanix
 ```
 
-### Install Thanix as a distribution package (TBA)
+### Install Thanix as a distribution package (Work in Progress)
 
 We are working on building packages for a variety of Linux distributions starting with `openSUSE Tumbleweed`.
 
@@ -108,6 +108,50 @@ Zypper should now install Thanix for you.
 > NOTE: The repository location is temporary and will be changed once Thanix is out of beta.
 > If you do not wish to deal with this, we suggest you install Thanix using one of the methods listed above.
 > Thank you for understanding.
+
+### Windows
+
+1. Download the latest Windows release from [GitHub Releases](https://github.com/The-Nazara-Project/Thanix/releases/latest).
+  - Look for `thanix-x86_64-pc-windows-msvc.zip`.
+
+2. Extract the `.zip` somewhere convenient.
+
+3. (Optional) Add the directory containing `thanix.exe` to your `PATH` environment variable:
+  - Press `Win + X` -> System -> Advanced system settings -> Environment Variables -> Path -> Add new path.
+
+4. Open a Command Prompt or PowerShell and run Thanix:
+
+```powershell
+thanix.exe input.yaml -o my_crate
+```
+
+### MacOS
+
+> [!Warning]
+> MacOS release workflow is very experimental and cannot be easily verified at this time.
+
+1. Download the latest macOS release from [GitHub Releases](https://github.com/The-Nazara-Project/Thanix/releases/latest).
+  - Look for `thanix-86_64-apple-darwin.tar.gz`
+
+2. Extract the tarball
+
+```bash
+tar -xzf thanix-x86_64-apple-darwin.tar.gz
+```
+
+3. Move the binary directory to your `PATH`, e.g `/usr/local/bin`:
+
+```bash
+mv thanix /usr/local/bin/
+chmod +x /usr/local/bin/thanix
+```
+
+4. Run Thanix from the terminal
+
+```bash
+# Example usage
+thanix input.yaml -o output.rs
+```
 
 ## Usage
 
