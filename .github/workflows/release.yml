@@ -36,6 +36,7 @@ jobs:
         run: cargo build --release
 
       - name: Package binary
+        shell: bash
         run: |
           mkdir dist
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
