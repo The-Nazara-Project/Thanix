@@ -14,7 +14,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             ext: tar.gz
           - os: macos-latest
-            target: x86_64-apple-darwin
+            target: aarch64-apple-darwin
             ext: tar.gz
           - os: windows-latest
             target: x86_64-pc-windows-msvc
@@ -28,14 +28,12 @@ jobs:
         with:
           toolchain: stable
       
-      - name: Build
-        run: |
-          if [ "${{ matrix.os }}" = "macos-latest" ]; then
-            cargo build --release
-          else
-            cargo build --release --target ${{ matrix.target }}
-          fi
+      - name: Add apple build target
+        if: matrix.os == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin
 
+      - name: Build
+        run: cargo build --release
 
       - name: Package binary
         run: |
