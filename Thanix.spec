@@ -25,8 +25,8 @@ License:        GPL-3.0
 # FIXME: use correct group, see "https://en.opensuse.org/openSUSE:Package_group_guidelines"
 # Group:
 URL:            https://github.com/The-Nazara-Project/Thanix
-Source0:        Thanix-%{version}.tar.gz
-Source1:        vendor.tar.gz
+Source0:        Thanix-%{version}.tar.zst
+Source1:        vendor.tar.zst
 BuildRequires:  git
 BuildRequires:  cargo
 BuildRequires:  cargo-packaging
