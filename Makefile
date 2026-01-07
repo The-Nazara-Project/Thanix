@@ -5,6 +5,7 @@ all: build
 help:
 	@echo "Available targets:"
 	@echo "    install-pre-commit - Install pre-commit"
+	@echo "    audit - Run cargo-audit to scan dependencies for known vulnerabilities"
 	@echo "    setup-hooks - Set up pre-commit hooks"
 	@echo "    run-hooks - Run pre-commit hooks"
 	@echo "    build - Builds the application in release mode"
@@ -16,6 +17,12 @@ help:
 install-pre-commit:
 	@echo "Installing pre-commit..."
 	pip install pre-commit || { echo 'Error installing pre-commit'; exit 1; }
+
+audit:
+	@echo "Running cargo audit..."
+	@command -v cargo-audit >/dev/null 2>&1 || \
+		(echo "Installing cargo-audit..." && cargo install cargo-audit --locked)
+	cargo audit
 
 setup-hooks:
 	@echo "Setting up pre-commit hooks..."

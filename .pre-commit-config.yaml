@@ -12,3 +12,9 @@ repos:
         entry: .pre-commit-hooks/clippy.sh
         language: script
         files: \.rs$
+
+      - id: audit
+        name: dependency_audit
+        entry: .pre-commit-hooks/audit.sh
+        language: script
+        pass_filenames: false
