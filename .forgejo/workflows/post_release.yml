@@ -1,12 +1,12 @@
-name: Ammend Release with Binaries (DEB, Windows, MacOS)
+name: (Post Release) Amend manual release with binaries (Debian & MacOS)
 
 on:
-    release:
-        types: [created]
+  release:
+    types: [created]
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: codeberg-tiny-lazy
     strategy:
       matrix:
         include:
@@ -21,19 +21,15 @@ jobs:
             ext: zip
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: https://code.forgejo.org/actions/checkout@v4
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-      
-      - name: Add apple build target
-        if: matrix.os == 'macos-latest'
-        run: rustup target add aarch64-apple-darwin
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          source $HOME/.cargo/env
 
-      - name: Build
-        run: cargo build --release
+      - name: Build Project
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Package binary
         shell: bash
@@ -47,18 +43,20 @@ jobs:
             cd dist && tar czf ../thanix-${{ matrix.target }}.${{ matrix.ext }} thanix
           fi
 
-      # New step: build a .deb package on Ubuntu
-      - name: Build Debian package
+      - name: Build Debian Package
         if: matrix.os == 'ubuntu-latest'
         run: |
           cargo install cargo-deb --force
           cargo deb --output ../thanix-${{ matrix.target }}.deb
 
-      - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            thanix-${{ matrix.target }}.${{ matrix.ext }}
-            thanix-${{ matrix.target }}.deb
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload to Release
+        run: |
+          for file in thanix-${{ matrix.target }}.${{ matrix.ext }} thanix-${{ matrix.target }}.deb; do
+            if [ -f "$file" ]; then
+              curl -X POST \
+                -H "Authorization: token ${{ secrets.GIT_TOKEN }}" \
+                -H "Content-Type: $(file -b --mime-type $file)" \
+                --data-binary @"$file" \
+                "${{ forgejo.event.release.upload_url }}"?name=$(basename "$file")
+            fi
+          done

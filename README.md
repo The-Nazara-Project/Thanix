@@ -32,7 +32,7 @@ To build Thanix from source you need to follow these steps:
 1. Download the source code. To do so, run this command in your Terminal:
 
 ```bash
-git clone git@github.com:The-Nazara-Project/Thanix.git
+git clone ssh://git@codeberg.org/nazara-project/Thanix.git
 ```
 
 This will create a new directory called `Thanix`, move into it.
@@ -89,8 +89,7 @@ You can install Thanix for openSUSE Tumbleweed using these steps:
 
 1. Add Repository
 ```bash
-sudo zypper ar https://download.opensuse.org/repositories/home:/ByteOtter:/nazara-project/openSUSE_Tumbleweed/home:ByteOtter:nazara-project.repo
-8m
+sudo zypper ar https://download.opensuse.org/repositories/home:/BytePaws:/nazara-project/openSUSE_Tumbleweed/home:BytePaws:nazara-project.repo
 ```
 
 2. Refresh Repositories
@@ -111,7 +110,7 @@ Zypper should now install Thanix for you.
 
 ### Windows
 
-1. Download the latest Windows release from [GitHub Releases](https://github.com/The-Nazara-Project/Thanix/releases/latest).
+1. Download the latest Windows release from [Releases](https://codeberg.org/nazara-project/Thanix/releases/latest).
   - Look for `thanix-x86_64-pc-windows-msvc.zip`.
 
 2. Extract the `.zip` somewhere convenient.
@@ -130,7 +129,7 @@ thanix.exe input.yaml -o my_crate
 > [!Warning]
 > MacOS release workflow is very experimental and cannot be easily verified at this time.
 
-1. Download the latest macOS release from [GitHub Releases](https://github.com/The-Nazara-Project/Thanix/releases/latest).
+1. Download the latest macOS release from [GitHub Releases](https://codeberg.org/nazara-project/Thanix/releases/latest).
   - Look for `thanix-86_64-apple-darwin.tar.gz`
 
 2. Extract the tarball
@@ -170,6 +169,5 @@ thanix  $YOUR_API_YAML --output thanix_client/
   values expected according to the schema.
 
 > [!Note]
-> The `--workaround` flag is only useful when creating a client for [`NetBox`](https://netbox.dev). In other cases it might produce 
+> The `--workaround` flag is only useful when creating a client for [`NetBox`](https://netbox.dev). In other cases it might produce
 > a broken or unsafe API client by weakening response data validation.
-

@@ -4,11 +4,11 @@
 
 Tick the applicable box:
 - [ ] Add new feature
+- [ ] Behaviour change
+- [ ] Deprecation
 - [ ] Security changes
 - [ ] Tests
 - [ ] Documentation changed
-<br/>
-
 - [ ] General Maintenance
 
 ## Links
@@ -16,6 +16,8 @@ Tick the applicable box:
 <!-- In case your changes fix an existing issue please link it below: -->
 
 Fixes:
+
+Tracks:
 
 - [ ] DONE
 
