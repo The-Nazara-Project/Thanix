@@ -6,7 +6,7 @@ publish = true
 edition = "2024"
 description = "A yaml-to-rust code generator for generating Rust code from yaml config files e.g. as found in openAPI."
 readme = "README.md"
-repository = "https://github.com/The-Nazara-Project/Thanix"
+repository = "https://codeberg.org/nazara-project/Thanix"
 license = "GPL-3.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
