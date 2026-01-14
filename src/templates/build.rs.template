@@ -1,26 +1,39 @@
-use std::fs::File;
-use std::io::Write;
-use std::path::Path;
+use std::{
+    env,
+    fs,
+    io::Write,
+    path::PathBuf,
+};
+
 use toml::Value;
 
 fn main() {
-    let manifest_path = Path::new("Cargo.toml");
+    // Ensure the build script reruns when Cargo.toml changes
+    println!("cargo:rerun-if-changed=Cargo.toml");
+
+    let manifest_dir =
+        PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set"));
+    let manifest_path = manifest_dir.join("Cargo.toml");
 
     let content =
-        std::fs::read_to_string(manifest_path).expect("Unable to read manifest to string.");
-    let parsed_toml: Value = content.parse().expect("Failed to parse toml!");
+        fs::read_to_string(&manifest_path).expect("Unable to read Cargo.toml");
+    let parsed_toml: Value =
+        content.parse().expect("Failed to parse Cargo.toml as TOML");
 
-    let version = parsed_toml["package"]["version"]
-        .as_str()
+    let version = parsed_toml
+        .get("package")
+        .and_then(|pkg| pkg.get("version"))
+        .and_then(Value::as_str)
         .unwrap_or("0.0.0");
 
-    let version_file_path = Path::new("src").join("version.rs");
-    let mut file = File::create(version_file_path).expect("Unable to create version.rs!");
+    let out_path = manifest_dir.join("src").join("version.rs");
+    let mut file = fs::File::create(&out_path)
+        .expect("Unable to create src/version.rs");
+
     writeln!(
         file,
         "#[allow(dead_code)]\npub const VERSION: &str = \"{}\";",
         version
     )
-    .expect("Unable to write to file!");
+    .expect("Unable to write version.rs");
 }
-
